@@ -13,30 +13,31 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-10 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-      <section className="relative isolate overflow-hidden rounded-[2rem] border border-slate-700/70 bg-gradient-to-br from-[#10243A] via-[#163352] to-[#0B1928] p-6 text-white shadow-2xl shadow-slate-900/15 sm:p-10 lg:p-12">
+      <section className="fd-enter relative isolate overflow-hidden rounded-[2rem] border border-slate-700/70 bg-gradient-to-br from-[#10243A] via-[#163352] to-[#0B1928] p-6 text-white shadow-2xl shadow-slate-900/15 transition-shadow duration-500 hover:shadow-slate-900/25 sm:p-10 lg:p-12 motion-reduce:transition-none">
         <div className="pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full bg-[#67B7E1]/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-[#E85D5D]/10 blur-3xl" />
 
         <div className="relative grid items-center gap-10 xl:grid-cols-[minmax(0,1.35fr)_minmax(290px,0.65fr)] xl:gap-12">
           <div className="space-y-6">
-            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-emerald-300/25 bg-emerald-400/10 px-3.5 py-2 text-xs font-semibold leading-5 text-emerald-200 sm:text-sm">
+            <div className="fd-enter fd-delay-1 inline-flex max-w-full items-center gap-2 rounded-full border border-emerald-300/25 bg-emerald-400/10 px-3.5 py-2 text-xs font-semibold leading-5 text-emerald-200 sm:text-sm">
               <Sparkles className="h-4 w-4 shrink-0" />
-              <span>NASA Space Apps Challenge 2026 <span className="px-1 text-emerald-300/60">·</span> MODIS &amp; VIIRS</span>
+              <span>NASA Space Apps Challenge 2026 <span className="px-1 text-emerald-300/60">·</span> MODIS + VIIRS</span>
             </div>
 
-            <div className="space-y-4">
+            <div className="fd-enter fd-delay-2 space-y-4">
               <h1 className="max-w-4xl text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
-                Understand our planet&apos;s fires.
+                Two satellites.
                 <span className="mt-1 block bg-gradient-to-r from-[#FFB04F] via-[#FF8058] to-[#E85D5D] bg-clip-text text-transparent">
-                  See the bigger picture.
+                  Different fire counts.
                 </span>
+                <span className="mt-1 block text-white">One clearer view.</span>
               </h1>
               <p className="max-w-2xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
-                MODIS and VIIRS see fire at different resolutions and times. FireDNA brings their observations together so you can explore the differences across Bangladesh and South Asia.
+                MODIS and VIIRS observe fires at different resolutions and times, so their hotspot counts are not directly comparable. FireDNA keeps each sensor&apos;s observations distinct, then brings them into a shared grid for exploration across Bangladesh and South Asia.
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap">
+            <div className="fd-enter fd-delay-3 flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap">
               <Link
                 href="/map"
                 className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#FF9F43] to-[#E85D5D] px-5 py-3 text-sm font-bold text-[#10243A] shadow-lg shadow-orange-950/20 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-950/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFB04F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#10243A] motion-reduce:transition-none"
@@ -63,29 +64,29 @@ export default async function HomePage() {
 
             <p className="flex items-start gap-2 text-xs leading-5 text-slate-400">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
-              <span>Satellite hotspots are thermal observations, not confirmed fire events. HAI is experimental.</span>
+              <span>A hotspot is a thermal observation, not a confirmed fire. HAI is an experimental prototype.</span>
             </p>
           </div>
 
-          <aside className="relative rounded-3xl border border-white/10 bg-slate-950/20 p-5 shadow-xl backdrop-blur-sm sm:p-6" aria-label="Satellite resolution comparison">
+          <aside className="fd-enter fd-delay-2 group relative rounded-3xl border border-white/10 bg-slate-950/20 p-5 shadow-xl backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-sky-200/25 hover:bg-slate-950/30 hover:shadow-2xl motion-reduce:transition-none sm:p-6" aria-label="Satellite resolution comparison">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-200">A shared view</p>
-                <h2 className="mt-2 text-xl font-bold text-white">Different sensors.<br />One comparison grid.</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-200">Why counts differ</p>
+                <h2 className="mt-2 text-xl font-bold text-white">Different pixels.<br />Different detections.</h2>
               </div>
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-[#67B7E1]">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-[#67B7E1] transition duration-300 group-hover:rotate-3 group-hover:scale-105 motion-reduce:transition-none">
                 <Grid2X2 className="h-5 w-5" />
               </span>
             </div>
 
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              Pixel size changes what each satellite can detect. FireDNA keeps those observations distinct while showing them in a common spatial framework.
+              A smaller pixel can reveal details a larger one may miss. These are complementary observations—not a one-to-one fire count.
             </p>
 
             <div className="mt-6 space-y-3">
-              <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-3.5">
+              <div className="group/sensor flex items-center justify-between gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-3.5 transition duration-200 hover:translate-x-1 hover:border-rose-200/25 hover:bg-white/[0.08] motion-reduce:transition-none">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E85D5D]/15 text-[#FF8A78]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E85D5D]/15 text-[#FF8A78] transition-transform duration-200 group-hover/sensor:scale-110 motion-reduce:transition-none">
                     <Flame className="h-5 w-5" />
                   </span>
                   <span>
@@ -96,9 +97,9 @@ export default async function HomePage() {
                 <span className="whitespace-nowrap text-sm font-semibold text-slate-200">~1 km</span>
               </div>
 
-              <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-3.5">
+              <div className="group/sensor flex items-center justify-between gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-3.5 transition duration-200 hover:translate-x-1 hover:border-orange-200/25 hover:bg-white/[0.08] motion-reduce:transition-none">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF9F43]/15 text-[#FFB45F]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF9F43]/15 text-[#FFB45F] transition-transform duration-200 group-hover/sensor:scale-110 motion-reduce:transition-none">
                     <Activity className="h-5 w-5" />
                   </span>
                   <span>
@@ -110,10 +111,10 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="mt-4 flex items-center gap-3 rounded-2xl border border-emerald-300/15 bg-emerald-400/[0.08] p-3.5">
-              <Layers className="h-5 w-5 shrink-0 text-emerald-300" />
+            <div className="group/grid mt-4 flex items-center gap-3 rounded-2xl border border-emerald-300/15 bg-emerald-400/[0.08] p-3.5 transition duration-200 hover:border-emerald-200/35 hover:bg-emerald-400/[0.12] motion-reduce:transition-none">
+              <Layers className="h-5 w-5 shrink-0 text-emerald-300 transition-transform duration-200 group-hover/grid:rotate-6 motion-reduce:transition-none" />
               <span className="text-sm text-emerald-100">
-                Shared comparison grid <strong className="font-bold">· 0.1° cells</strong>
+                FireDNA comparison grid <strong className="font-bold">· 0.1° cells</strong>
               </span>
             </div>
             <p className="mt-3 text-[11px] leading-5 text-slate-400">
@@ -123,7 +124,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="space-y-5">
+      <section className="fd-enter fd-delay-2 space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2D8A64]">Regional overview</p>
@@ -143,7 +144,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="home-stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Hotspots"
             value={summary.total_count.toLocaleString()}
@@ -180,7 +181,7 @@ export default async function HomePage() {
       </section>
 
       {/* Interactive Pathways */}
-      <section className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+      <section className="fd-enter fd-delay-3 grid grid-cols-1 gap-5 lg:grid-cols-3">
         
         {/* Card 1: Map Entry */}
         <div className="group flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-950/5 motion-reduce:transition-none">
@@ -210,7 +211,7 @@ export default async function HomePage() {
             </div>
             <h3 className="text-lg font-bold text-[#10243A]">Sensor Comparison Lab</h3>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Why does VIIRS report 5x more fire points than MODIS for the exact same fire? Step inside our laboratory to examine side-by-side satellite optics.
+              Compare the observations from two sensors with different pixel sizes and overpass times—without treating their counts as interchangeable.
             </p>
           </div>
           <Link
@@ -230,7 +231,7 @@ export default async function HomePage() {
             </div>
             <h3 className="text-lg font-bold text-[#10243A]">Fire Calendar & Anomalies</h3>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Track 365 days of seasonal crop residue burning and examine unusual fire events using statistical Z-scores and climatological baselines.
+              Explore activity through the year and review statistical anomalies with clear context about what those signals can—and cannot—tell you.
             </p>
           </div>
           <Link
@@ -244,7 +245,7 @@ export default async function HomePage() {
       </section>
 
       {/* Educational Hub Highlights */}
-      <section className="space-y-4 pt-4">
+      <section className="fd-enter fd-delay-4 space-y-4 pt-4">
         <div className="border-t border-slate-200 pt-6">
           <h2 className="text-lg font-bold text-[#10243A]">Learn Satellite Fire Science</h2>
           <p className="text-xs text-slate-500">Key scientific concepts explained in simple language for students and researchers</p>
