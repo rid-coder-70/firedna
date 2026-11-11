@@ -12,23 +12,31 @@ The FireDNA data pipeline is a linear, audited processing chain that transforms 
 
 ```mermaid
 flowchart TD
-    A["Stage 1: FIRMS API Client\nfirms_client.py"] -->|Raw CSV text| B["Stage 2: CSV Parser\ndata_cleaner.py"]
-    B -->|Parsed DataFrame| C["Stage 3: Data Validator\ndata_validator.py"]
-    C -->|Validated DataFrame| D["Stage 4: Deduplicator\ndeduplicator.py"]
-    D -->|Unique records| E["Stage 5: DB Insertion\ndatabase.py"]
-    E -->|satellite_observations| F["Stage 6: Spatial Harmonization\nspatial.py"]
-    F -->|Grid-mapped DataFrame| G["Stage 7: Temporal Harmonization\ntemporal.py"]
-    G -->|Time-windowed DataFrame| H["Stage 8: Sensor Normalization\nnormalization.py"]
-    H -->|Normalized DataFrame| I["Stage 9: Activity Index\nactivity_index.py"]
-    I -->|HAI values| J["Stage 10: DB Insertion\nharmonized_observations"]
-    J -->|Harmonized data| K["Stage 11: Baseline Update\nhistorical.py"]
-    K -->|Baseline stats| L["Stage 12: Anomaly Detection\nanomaly_detection.py"]
-    L -->|Anomaly scores| M["Stage 13: DB Insertion\nactivity_anomalies"]
-    style A fill:#1a3a5c,color:#fff
-    style E fill:#2D8A64,color:#fff
-    style J fill:#2D8A64,color:#fff
-    style K fill:#2D8A64,color:#fff
-    style M fill:#2D8A64,color:#fff
+    FIRMS["NASA FIRMS API"] -->|CSV response| Client["FIRMSClient"]
+    Demo["DemoDataGenerator<br/>(when demo mode is requested)"] -->|synthetic CSV| Client
+    Client --> Parser["DataCleaner<br/>parse and standardize"]
+    Parser --> Validator["DataValidator<br/>validate and normalize"]
+    Validator --> Deduplicator["Deduplicator"]
+    Deduplicator --> RawStore[("SQLAlchemy database<br/>satellite_observations + ingestion log")]
+
+    RawStore -->|separate harmonization run| Service["HarmonizationService"]
+    Service --> Grid["Assign spatial grid cell<br/>and group by observation date"]
+    Grid --> HAI["ActivityIndexEngine<br/>calculate prototype HAI"]
+    HAI --> DerivedStore[("harmonized_observations<br/>and processing run")]
+
+    DerivedStore --> History["HistoricalAnalyticsEngine<br/>daily and period summaries"]
+    DerivedStore --> Anomaly["AnomalyDetector<br/>prototype baseline and anomaly records"]
+    Anomaly --> AnomalyStore[("historical_baselines<br/>activity_anomalies")]
+    RawStore --> API["FastAPI endpoints and exports"]
+    DerivedStore --> API
+    AnomalyStore --> API
+    API --> Frontend["Next.js dashboard"]
+    style FIRMS fill:#1a3a5c,color:#fff
+    style RawStore fill:#2D8A64,color:#fff
+    style DerivedStore fill:#2D8A64,color:#fff
+    style AnomalyStore fill:#2D8A64,color:#fff
+    style API fill:#FF9F43,color:#000
+    style Frontend fill:#67B7E1,color:#000
 ```
 
 ---
@@ -390,4 +398,3 @@ class PipelineConfig:
 ---
 
 *Document version 1.0.0 — FireDNA Data Pipeline Design*
-

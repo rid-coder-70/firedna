@@ -2,37 +2,30 @@
 ## NASA Space Apps Challenge 2026
 
 **Version:** 1.0.0  
-**Date:** November 10, 2026  
-**Status:** Phase 1 Complete — Ready for Phase 2 Approval
+**Date:** November 11, 2026
+**Status:** Full-stack prototype implemented and verified locally
 
 ---
 
 ## 1. Project Phase Structure
 
-To ensure architectural rigor, scientific integrity, and hackathon delivery readiness, FireDNA is structured into five distinct phases:
+The initial design and full-stack prototype are implemented. The diagram summarizes delivered work and identifies live-data configuration and production deployment as follow-up steps.
 
 ```mermaid
 gantt
-    title FireDNA Implementation Roadmap
+    title FireDNA Prototype Delivery and Next Steps
     dateFormat  YYYY-MM-DD
-    section Phase 1: System Design
-    Architecture, PRD, DB & API Design     :done, des1, 2026-11-10, 1d
-    Harmonization & UI/UX Specs             :done, des2, 2026-11-10, 1d
-    section Phase 2: Backend Development
-    FastAPI Core & DB Models                :active, be1, 2026-11-11, 1d
-    FIRMS Ingestion & Cleaning              :be2, after be1, 1d
-    Harmonization & Analytics Engines       :be3, after be2, 1d
-    API Endpoints & Unit Tests              :be4, after be3, 1d
-    section Phase 3: Frontend Development
-    Next.js Setup & Layout System           :fe1, after be4, 1d
-    Interactive Fire Map (Leaflet)          :fe2, after fe1, 1d
-    Sensor Comparison Lab                   :fe3, after fe2, 1d
-    Analytics, Calendar & Educational Hub   :fe4, after fe3, 1d
-    section Phase 4: Integration & QA
-    Full Stack Wiring & Live Data Flow      :qa1, after fe4, 1d
-    Edge Case Testing & Demo Mode           :qa2, after qa1, 1d
-    section Phase 5: Presentation Readiness
-    Demo Walkthrough & Final Documentation  :pr1, after qa2, 1d
+    section Design
+    Requirements and scientific methodology :done, des1, 2026-11-10, 1d
+    Architecture, API, database, and UI docs :done, des2, 2026-11-10, 1d
+    section Implemented prototype
+    FastAPI ingestion and analytics backend :done, be1, 2026-11-11, 1d
+    Next.js maps and dashboard routes :done, fe1, 2026-11-11, 1d
+    Frontend/backend integration and demo data :done, qa1, 2026-11-11, 1d
+    Backend tests, frontend lint, and production build :done, qa2, 2026-11-11, 1d
+    section Follow-up
+    Configure a NASA FIRMS key for live ingestion :live, 2026-11-12, 1d
+    Deploy and verify hosted services :deploy, 2026-11-13, 1d
 ```
 
 ---
@@ -52,10 +45,12 @@ gantt
 
 ---
 
-## 3. Phase 2: Backend Development Plan
+## 3. Phase 2: Backend Prototype
 
 ### 3.1 Objectives
-Build a high-performance, modular Python/FastAPI service capable of ingesting FIRMS satellite data, cleaning observations, storing them in PostgreSQL/PostGIS, running spatial/temporal harmonization, and serving them via documented REST endpoints.
+The implemented Python/FastAPI service can ingest FIRMS or demo data, validate observations, store them through SQLAlchemy, calculate harmonized results and anomaly summaries, and serve documented REST endpoints. SQLite is the local default; Docker Compose configures PostgreSQL/PostGIS.
+
+The directory tree below records the original implementation plan. The checked-out source tree is authoritative if a planned file or component differs.
 
 ### 3.2 Directory Structure
 ```
@@ -113,50 +108,51 @@ backend/
 └── .env.example                 # Environment configuration template
 ```
 
-### 3.3 Milestones & Deliverables
+### 3.3 Implemented Milestones
 1. **M2.1: Core Infrastructure & Database Models**
-   - Config, database connectivity (PostgreSQL/PostGIS with SQLite in-memory fallback for local unit tests).
-   - SQLAlchemy declarative models matching `DATABASE_DESIGN.md`.
+   - Environment-based configuration and SQLAlchemy database connectivity (file-based SQLite locally; PostgreSQL in Compose).
+   - SQLAlchemy models for observations, processing runs, harmonized results, baselines, and anomalies. The SQL migration in `DATABASE_DESIGN.md` is a design reference and is not run by the application.
 2. **M2.2: NASA FIRMS Ingestion Engine**
-   - HTTP client with retry logic for MODIS & VIIRS products.
+   - FIRMS HTTP client for supported MODIS and VIIRS products.
    - Demo Data Generator providing synthetic Bangladesh fire events with realistic coordinates and FRP when no key is present.
    - Data cleaning, validation, and deduplication pipeline.
 3. **M2.3: Harmonization & Analytics Engines**
-   - Spatial gridding (0.1°) and temporal bucket assignment.
-   - Normalization algorithms and composite HAI computation.
-   - Statistical baselines and Z-score anomaly detection.
+   - Spatial grid assignment and daily observation grouping.
+   - Sensor normalization and experimental HAI computation.
+   - Anomaly classification with explicit insufficient-baseline handling.
 4. **M2.4: FastAPI REST API Endpoints**
-   - Implement all 6 endpoint groups under `/api/v1`.
-   - Streaming CSV and GeoJSON export responses.
+   - Six API groups under `/api/v1`: ingestion, hotspots, harmonization, analytics, anomalies, and exports.
+   - CSV and GeoJSON download endpoints.
    - Auto-generated Swagger documentation at `/docs`.
 5. **M2.5: Backend Verification & Test Suite**
    - Comprehensive test suite covering ingestion, harmonization math, anomaly classification, and API status codes.
 
 ---
 
-## 4. Phase 3: Frontend Development Plan
+## 4. Phase 3: Frontend Prototype
 
 ### 4.1 Objectives
-Develop a modern, educational, responsive Next.js 14 web application matching the specifications in `UI_UX_DESIGN.md`.
+The Next.js 14 application implements the dashboard, interactive map, comparison lab, calendar, analytics, anomalies, data sources, and about pages described in `UI_UX_DESIGN.md`.
 
-### 4.2 Application Pages & Component Map
-1. **`/` — Home Dashboard:** Real-time metrics, regional selectors, recent activity charts, quick entry cards.
-2. **`/map` — Interactive Fire Map:** React Leaflet with MODIS/VIIRS layer toggling, clustering, polygon grid overlay, popup inspector.
-3. **`/compare` — Sensor Comparison Lab:** 3-column synchronized comparison (MODIS vs VIIRS vs Harmonized Grid), cell inspector, agreement charts.
-4. **`/calendar` — Fire Activity Calendar:** 365-day annual heatmap with historical overlay and seasonal fire indicators.
-5. **`/analytics` — Activity Analytics:** Recharts time series, diurnal day/night distribution, FRP histograms.
-6. **`/anomalies` — Anomaly Explorer:** Z-Score gauge, percentile breakdown, educational transparency warnings.
-7. **`/sources` — Data Sources & Provenance:** NASA FIRMS attribution, data freshness monitor, live vs demo badge.
-8. **`/about` — About FireDNA & Educational Hub:** Interactive FAQ, team details, satellite technology guide.
+### 4.2 Implemented Routes
+1. **`/` — Dashboard:** Regional overview, metrics, and entry points.
+2. **`/map` — Fire Map:** Leaflet map with satellite observations and harmonized cells.
+3. **`/compare` — Sensor Lab:** MODIS, VIIRS, and HAI comparison.
+4. **`/calendar` — Fire Calendar:** Daily activity heatmap.
+5. **`/analytics` — Analytics:** Daily, monthly, and seasonal charts.
+6. **`/anomalies` — Anomalies:** Anomaly summary and historical context.
+7. **`/sources` — Data Sources:** FIRMS products, attribution, and provenance.
+8. **`/about` — About:** Project and educational information.
 
 ---
 
-## 5. Phase 4: Integration & Quality Assurance
+## 5. Phase 4: Integration & Quality Assurance (Verified)
 
-- Connect all 8 frontend pages to backend `/api/v1` REST endpoints.
-- Validate error states (network failure, empty search results, invalid bounding boxes).
-- Ensure demo mode is clearly labeled throughout the entire application.
-- Cross-browser and mobile responsive testing.
+- The frontend requests backend `/api/v1` data and provides demo fallbacks where available.
+- The backend test runner passes its 24 verification checks.
+- Frontend lint and production build complete successfully.
+- Demo data is visibly labeled; local API and frontend routes were verified together.
+- Cross-browser and mobile testing remain follow-up validation tasks.
 
 ---
 
@@ -172,9 +168,9 @@ Develop a modern, educational, responsive Next.js 14 web application matching th
 
 ---
 
-## 7. Phase 1 Completion Sign-Off
+## 7. Prototype Verification
 
-All eight design documents have been authored and verified:
+The eight design documents describe the project scope and methodology:
 1. `PRD.md`
 2. `SYSTEM_ARCHITECTURE.md`
 3. `DATABASE_DESIGN.md`
@@ -184,5 +180,4 @@ All eight design documents have been authored and verified:
 7. `UI_UX_DESIGN.md`
 8. `DEVELOPMENT_ROADMAP.md`
 
-**Status:** Ready to proceed to **Phase 2 (Backend Development)** upon user confirmation.
-
+The full-stack prototype is implemented and runs locally in demo mode. Configure a NASA FIRMS key to exercise live ingestion, then deploy and verify the hosted services before treating the project as production-ready.

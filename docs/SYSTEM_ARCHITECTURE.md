@@ -8,13 +8,13 @@
 
 ## 1. Architecture Overview
 
-FireDNA follows a **layered microservice-inspired monolith** architecture. For a 24-hour hackathon, a single deployable FastAPI backend with internal service separation is pragmatic and maintainable, while the modular structure allows future decomposition into microservices.
+FireDNA is a **modular monolith**: one FastAPI backend contains separate API, service, ingestion, harmonization, and analytics modules. SQLite is the local-development default; Docker Compose uses PostgreSQL/PostGIS. The frontend is a Next.js application.
 
 ### Design Principles
 1. **Separation of concerns** — ingestion, processing, harmonization, and API layers are independent Python modules.
 2. **Scientific transparency** — raw satellite data is never discarded; all derived metrics store methodology version and parameters.
-3. **Fail-safe operation** — demo mode activates automatically when NASA API is unavailable.
-4. **Stateless API** — the FastAPI layer is stateless; all state lives in PostgreSQL/PostGIS.
+3. **Explicit demo mode** — synthetic data is visibly labeled when no FIRMS key is configured or a demo run is requested.
+4. **Portable development** — the same SQLAlchemy models support local SQLite and the Compose PostgreSQL database.
 5. **Progressive enhancement** — the frontend works with partial data; empty states are handled gracefully.
 
 ---
@@ -23,30 +23,27 @@ FireDNA follows a **layered microservice-inspired monolith** architecture. For a
 
 ```mermaid
 flowchart TD
-    A["NASA FIRMS API\n(MODIS NRT / VIIRS NRT)"] -->|HTTP CSV| B["Data Ingestion Service\nfirms_client.py"]
-    B -->|Raw CSV rows| C["Data Cleaning & Validation\ndata_cleaner.py / data_validator.py"]
-    C -->|Validated records| D["Deduplication Engine\ndeduplicator.py"]
-    D -->|Clean observations| E[("PostgreSQL + PostGIS\nsatellite_observations")]
-    E -->|Raw observations| F["Spatial Harmonization\nspatial.py"]
-    E -->|Raw observations| G["Temporal Harmonization\ntemporal.py"]
-    F -->|Grid-mapped records| H["Sensor Normalization\nnormalization.py"]
-    G -->|Time-windowed records| H
-    H -->|Normalized values| I["Activity Index Engine\nactivity_index.py"]
-    I -->|HAI values| J[("PostgreSQL\nharmonized_observations")]
-    J -->|Harmonized data| K["Historical Analytics Engine\nhistorical.py"]
-    J -->|Harmonized data| L["Anomaly Detection Engine\nanomaly_detection.py"]
-    K -->|Baselines| M[("PostgreSQL\nhistorical_baselines")]
-    L -->|Anomaly scores| N[("PostgreSQL\nactivity_anomalies")]
-    E & J & M & N -->|Query| O["FastAPI REST API\n/api/v1"]
-    O -->|JSON / GeoJSON| P["Next.js Web Application\nFireDNA Frontend"]
-    P -->|User browser| Q["End User"]
-    style A fill:#1a3a5c,color:#fff
-    style E fill:#2D8A64,color:#fff
-    style J fill:#2D8A64,color:#fff
-    style M fill:#2D8A64,color:#fff
-    style N fill:#2D8A64,color:#fff
-    style O fill:#FF9F43,color:#000
-    style P fill:#67B7E1,color:#000
+    FIRMS["NASA FIRMS<br/>(MODIS and VIIRS NRT)"] -->|HTTP CSV| Ingestion["IngestionService<br/>FIRMSClient"]
+    Demo["DemoDataGenerator<br/>(optional synthetic source)"] -->|CSV in demo mode| Ingestion
+    Ingestion --> Clean["Parse, validate,<br/>normalize, deduplicate"]
+    Clean --> RawDB[("SQLAlchemy database<br/>satellite_observations")]
+    RawDB -->|explicit processing run| Harmonize["HarmonizationService<br/>grid assignment and daily grouping"]
+    Harmonize --> HAI["ActivityIndexEngine<br/>experimental HAI"]
+    HAI --> DerivedDB[("harmonized_observations")]
+    DerivedDB --> Analytics["HistoricalAnalyticsEngine"]
+    DerivedDB --> Anomalies["AnomalyDetector<br/>prototype baselines and scores"]
+    Anomalies --> AnomalyDB[("historical_baselines<br/>activity_anomalies")]
+    RawDB --> API["FastAPI REST API<br/>/api/v1"]
+    DerivedDB --> API
+    AnomalyDB --> API
+    API -->|JSON and GeoJSON| Frontend["Next.js frontend"]
+    Frontend --> Browser["User browser"]
+    style FIRMS fill:#1a3a5c,color:#fff
+    style RawDB fill:#2D8A64,color:#fff
+    style DerivedDB fill:#2D8A64,color:#fff
+    style AnomalyDB fill:#2D8A64,color:#fff
+    style API fill:#FF9F43,color:#000
+    style Frontend fill:#67B7E1,color:#000
 ```
 
 ---
@@ -57,99 +54,89 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    subgraph Backend["FastAPI Backend (Python 3.11+)"]
-        subgraph API["API Layer — /api/v1"]
-            I1[ingestion.py]
-            I2[hotspots.py]
-            I3[harmonization.py]
-            I4[analytics.py]
-            I5[anomalies.py]
-            I6[exports.py]
+    subgraph Backend["FastAPI backend"]
+        subgraph Routes["API routes: /api/v1"]
+            IngestionAPI["ingestion.py"]
+            HotspotsAPI["hotspots.py"]
+            HarmonizationAPI["harmonization.py"]
+            AnalyticsAPI["analytics.py"]
+            AnomaliesAPI["anomalies.py"]
+            ExportsAPI["exports.py"]
         end
-        subgraph Services["Service Layer"]
-            S1[ingestion_service.py]
-            S2[harmonization_service.py]
-            S3[analytics_service.py]
-            S4[anomaly_service.py]
+        subgraph Services["Orchestration services"]
+            IngestionService["ingestion_service.py"]
+            HarmonizationService["harmonization_service.py"]
         end
-        subgraph Ingestion["Ingestion Subsystem"]
-            IN1[firms_client.py]
-            IN2[data_cleaner.py]
-            IN3[data_validator.py]
-            IN4[deduplicator.py]
+        subgraph Ingestion["Ingestion modules"]
+            FIRMSClient["firms_client.py"]
+            DemoGenerator["demo_generator.py"]
+            Cleaner["data_cleaner.py"]
+            Validator["data_validator.py"]
+            Deduplicator["deduplicator.py"]
         end
-        subgraph Harmonization["Harmonization Subsystem"]
-            H1[spatial.py]
-            H2[temporal.py]
-            H3[normalization.py]
-            H4[activity_index.py]
-            H5[validation.py]
+        subgraph Harmonization["Harmonization modules"]
+            Spatial["spatial.py"]
+            Temporal["temporal.py"]
+            Normalization["normalization.py"]
+            ActivityIndex["activity_index.py"]
+            Agreement["validation.py"]
         end
-        subgraph Analytics["Analytics Subsystem"]
-            AN1[historical.py]
-            AN2[anomaly_detection.py]
+        subgraph Analytics["Analytics modules"]
+            Historical["historical.py"]
+            AnomalyDetection["anomaly_detection.py"]
         end
-        subgraph Core["Core"]
-            C1[config.py]
-            C2[database.py]
-            C3[models.py]
-            C4[schemas.py]
+        subgraph Core["Core and persistence"]
+            Config["core/config.py"]
+            Database["core/database.py"]
+            Models["models/models.py"]
+            Schemas["schemas/schemas.py"]
         end
     end
-    API --> Services
-    Services --> Ingestion
-    Services --> Harmonization
-    Services --> Analytics
-    Ingestion --> Core
-    Harmonization --> Core
-    Analytics --> Core
+    IngestionAPI --> IngestionService
+    HarmonizationAPI --> HarmonizationService
+    AnalyticsAPI --> Historical
+    AnomaliesAPI --> AnomalyDetection
+    IngestionService --> Ingestion
+    HarmonizationService --> Harmonization
+    IngestionService --> Database
+    HarmonizationService --> Database
+    Historical --> Database
+    AnomalyDetection --> Database
+    Routes --> Schemas
+    Services --> Models
+    Database --> Models
 ```
 
 ### 3.2 Frontend Component Diagram
 
 ```mermaid
 flowchart TD
-    subgraph Frontend["Next.js App Router Frontend"]
-        subgraph Pages["Pages (app/)"]
-            P1["/ — Dashboard"]
-            P2["/map — Fire Map"]
-            P3["/compare — Sensor Comparison Lab"]
-            P4["/calendar — Fire Calendar"]
-            P5["/analytics — Activity Analytics"]
-            P6["/anomalies — Anomaly Explorer"]
-            P7["/sources — Data Sources"]
-            P8["/about — About FireDNA"]
+    subgraph Frontend["Next.js App Router frontend"]
+        subgraph Pages["Implemented routes"]
+            Dashboard["/ — Dashboard"]
+            MapPage["/map — Fire Map"]
+            ComparePage["/compare — Sensor Lab"]
+            CalendarPage["/calendar — Fire Calendar"]
+            AnalyticsPage["/analytics — Analytics"]
+            AnomaliesPage["/anomalies — Anomalies"]
+            SourcesPage["/sources — Data Sources"]
+            AboutPage["/about — About"]
         end
-        subgraph Components["Shared Components"]
-            C1[FireMap.tsx]
-            C2[HotspotPopup.tsx]
-            C3[SensorPanel.tsx]
-            C4[ActivityChart.tsx]
-            C5[CalendarHeatmap.tsx]
-            C6[AnomalyGauge.tsx]
-            C7[EducationCard.tsx]
-            C8[StatCard.tsx]
-            C9[LayerControls.tsx]
-            C10[DataBadge.tsx]
+        subgraph Components["Implemented shared components"]
+            FireMap["FireMap.tsx (Leaflet)"]
+            AnalyticsCharts["AnalyticsCharts.tsx"]
+            ComparisonChart["ComparisonChart.tsx"]
+            CalendarHeatmap["CalendarHeatmap.tsx"]
+            EducationCard["EducationCard.tsx"]
+            StatCard["StatCard.tsx"]
+            Navigation["Navbar and Footer"]
+            DemoBanner["DemoBanner.tsx"]
         end
-        subgraph State["State & Data"]
-            ST1[API Client — lib/api.ts]
-            ST2[React Query Hooks]
-            ST3[Map State — Zustand]
-            ST4[Filter State]
-        end
-        subgraph UI["UI System"]
-            UI1[shadcn/ui Components]
-            UI2[Tailwind CSS]
-            UI3[Framer Motion]
-            UI4[Lucide Icons]
-        end
+        APIClient["lib/api.ts and lib/types.ts"]
     end
     Pages --> Components
-    Components --> State
-    Components --> UI
-    State --> ST1
-    ST1 -->|fetch| Backend["FastAPI Backend"]
+    Components --> APIClient
+    APIClient -->|fetch JSON and GeoJSON| Backend["FastAPI /api/v1"]
 ```
 
 ---
@@ -164,28 +151,30 @@ sequenceDiagram
     participant DB as PostgreSQL/PostGIS
     participant FIRMS as NASA FIRMS API
 
-    Note over API,FIRMS: Ingestion Flow (triggered by POST /ingestion/run)
-    API->>FIRMS: GET /api/area/csv/{key}/{product}/{bbox}/{date}
-    FIRMS-->>API: CSV response (raw observations)
-    API->>API: Clean, validate, deduplicate
-    API->>DB: INSERT into satellite_observations
-    API->>API: Run harmonization engine
-    API->>DB: INSERT into harmonized_observations
-    API->>DB: UPDATE historical_baselines
-    API->>DB: INSERT activity_anomalies
+    Note over API,FIRMS: Ingestion Flow (POST /api/v1/ingestion/run)
+    API->>FIRMS: Fetch product CSV (or use demo generator)
+    FIRMS-->>API: CSV response
+    API->>API: Parse, validate, normalize, deduplicate
+    API->>DB: Save ingestion log and satellite observations
+
+    Note over API,DB: Harmonization is a separate processing run
+    User->>API: POST /api/v1/harmonization/run
+    API->>DB: Read filtered satellite observations
+    API->>API: Assign grid cells, group by date, calculate HAI
+    API->>DB: Save harmonized observations and processing run
 
     Note over User,DB: Query Flow (triggered by user interaction)
     User->>FE: Open Fire Map / select filters
-    FE->>API: GET /hotspots?bbox=...&date=...&sensor=MODIS
-    API->>DB: SELECT with PostGIS bbox filter
-    DB-->>API: GeoJSON feature collection
+    FE->>API: GET /hotspots/geojson?bbox=...&sensor=MODIS
+    API->>DB: Query observations by coordinates and filters
+    DB-->>API: Matching observations
     API-->>FE: JSON response
     FE->>FE: Render Leaflet markers
 
     Note over User,DB: Comparison Flow
     User->>FE: Open Sensor Comparison Lab
-    FE->>API: GET /harmonization/compare?cell_id=...
-    API->>DB: SELECT harmonized + raw observations
+    FE->>API: GET /harmonization/compare
+    API->>DB: Query comparison data for a grid cell
     DB-->>API: Comparison data
     API-->>FE: JSON comparison object
     FE->>FE: Render three-panel comparison
@@ -301,28 +290,13 @@ erDiagram
 
 ```mermaid
 flowchart TD
-    subgraph Internet["Internet"]
-        U["User Browser"]
-    end
-    subgraph Vercel["Vercel (Frontend Hosting)"]
-        FE["Next.js App\nfiredna.vercel.app"]
-    end
-    subgraph Render["Render.com (Backend Hosting)"]
-        BE["FastAPI Backend\nfiredna-api.onrender.com"]
-    end
-    subgraph Render2["Render.com (Database)"]
-        DB["PostgreSQL 15 + PostGIS\nManaged Instance"]
-    end
-    subgraph NASA["NASA External APIs"]
-        FIRMS["FIRMS API\nfirms.modaps.eosdis.nasa.gov"]
-    end
-    U -->|HTTPS| FE
-    FE -->|HTTPS API calls| BE
-    BE -->|TCP 5432| DB
-    BE -->|HTTPS| FIRMS
-    style FE fill:#67B7E1,color:#000
-    style BE fill:#FF9F43,color:#000
-    style DB fill:#2D8A64,color:#fff
+    User["User browser"] -->|HTTP| Frontend["Next.js frontend<br/>port 3000"]
+    Frontend -->|HTTP API requests| Backend["FastAPI backend<br/>port 8000"]
+    Backend -->|SQLAlchemy| Database[("SQLite by default<br/>PostgreSQL in Compose")]
+    Backend -->|HTTPS when configured| FIRMS["NASA FIRMS API"]
+    style Frontend fill:#67B7E1,color:#000
+    style Backend fill:#FF9F43,color:#000
+    style Database fill:#2D8A64,color:#fff
     style FIRMS fill:#1a3a5c,color:#fff
 ```
 
@@ -330,15 +304,14 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    subgraph Docker["Docker Compose Network"]
-        FE["Next.js\nlocalhost:3000"]
-        BE["FastAPI\nlocalhost:8000"]
-        DB["PostgreSQL+PostGIS\nlocalhost:5432"]
-        ADM["pgAdmin\nlocalhost:5050"]
+    subgraph Docker["Docker Compose"]
+        FE["Next.js frontend<br/>port 3000"]
+        BE["FastAPI backend<br/>port 8000"]
+        DB[("PostgreSQL + PostGIS<br/>port 5432")]
     end
-    FE --> BE
-    BE --> DB
-    ADM --> DB
+    FE -->|API requests| BE
+    BE -->|SQLAlchemy| DB
+    BE -->|optional live ingestion| FIRMS["NASA FIRMS API"]
 ```
 
 ---

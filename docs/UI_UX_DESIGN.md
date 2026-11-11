@@ -70,16 +70,25 @@ The design balances **scientific credibility** with **educational accessibility*
 The layout follows a persistent responsive layout with a top navigation bar (or collapsible sidebar on desktop) and responsive bottom drawer / hamburger on mobile.
 
 ```mermaid
-graph TD
-    Root["FireDNA Web Application"]
-    Root --> P1["1. Home Dashboard (Overview & Live Stats)"]
-    Root --> P2["2. Explore Fire Map (Interactive Satellite GIS)"]
-    Root --> P3["3. Sensor Comparison Lab (MODIS vs VIIRS vs Harmonized)"]
-    Root --> P4["4. Fire Activity Calendar (Annual & Seasonal Heatmap)"]
-    Root --> P5["5. Activity Analytics (Trends & Time Series)"]
-    Root --> P6["6. Anomaly Explorer (Z-Scores & Historical Baselines)"]
-    Root --> P7["7. Data Sources & Transparency (Provenance & Limitations)"]
-    Root --> P8["8. About FireDNA & Educational Hub (FAQ & Science Guide)"]
+flowchart TD
+    Root["FireDNA web application"]
+    Root --> P1["/ — Dashboard"]
+    Root --> P2["/map — Interactive fire map"]
+    Root --> P3["/compare — Sensor comparison lab"]
+    Root --> P4["/calendar — Fire activity calendar"]
+    Root --> P5["/analytics — Activity analytics"]
+    Root --> P6["/anomalies — Anomaly explorer"]
+    Root --> P7["/sources — Data sources and provenance"]
+    Root --> P8["/about — About and educational hub"]
+    Nav["Responsive top navigation"]
+    Nav --> P1
+    Nav --> P2
+    Nav --> P3
+    Nav --> P4
+    Nav --> P5
+    Nav --> P6
+    Nav --> P7
+    Nav --> P8
 ```
 
 ---
@@ -235,4 +244,3 @@ The core scientific innovation showcase of FireDNA.
 ---
 
 *Document version 1.0.0 — FireDNA UI/UX Design Specification*
-
