@@ -1,82 +1,146 @@
 import Link from "next/link";
 import {
-  Flame, MapPin, ArrowRight, Activity, Eye,
-  Sparkles, Layers, ShieldCheck, Download
+  Flame, MapPin, ArrowRight, Activity, Eye, Sparkles,
+  Layers, ShieldCheck, Download, Grid2X2
 } from "lucide-react";
 import StatCard from "@/components/ui/StatCard";
 import EducationCard from "@/components/education/EducationCard";
-import { getHotspotSummary, getDailyAnalytics, getHarmonizedResults, EXPORT_CSV_URL } from "@/lib/api";
+import { getHotspotSummary, getHarmonizedResults, EXPORT_CSV_URL } from "@/lib/api";
 
 export default async function HomePage() {
   const summary = await getHotspotSummary();
-  const dailySeries = await getDailyAnalytics();
   const harmonizedCells = await getHarmonizedResults();
 
   return (
-    <div className="space-y-10 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-      
-      {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#10243A] via-[#163352] to-[#0B1928] text-white p-8 sm:p-12 shadow-2xl border border-slate-700/60">
-        <div className="relative z-10 max-w-3xl space-y-4">
-          <div className="inline-flex items-center space-x-2 bg-[#2D8A64]/30 border border-[#2D8A64]/60 px-3 py-1 rounded-full text-xs font-semibold text-emerald-300">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>NASA Space Apps Challenge 2026 • MODIS & VIIRS Hot Spots</span>
+    <div className="mx-auto w-full max-w-7xl space-y-10 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <section className="relative isolate overflow-hidden rounded-[2rem] border border-slate-700/70 bg-gradient-to-br from-[#10243A] via-[#163352] to-[#0B1928] p-6 text-white shadow-2xl shadow-slate-900/15 sm:p-10 lg:p-12">
+        <div className="pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full bg-[#67B7E1]/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-[#E85D5D]/10 blur-3xl" />
+
+        <div className="relative grid items-center gap-10 xl:grid-cols-[minmax(0,1.35fr)_minmax(290px,0.65fr)] xl:gap-12">
+          <div className="space-y-6">
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-emerald-300/25 bg-emerald-400/10 px-3.5 py-2 text-xs font-semibold leading-5 text-emerald-200 sm:text-sm">
+              <Sparkles className="h-4 w-4 shrink-0" />
+              <span>NASA Space Apps Challenge 2026 <span className="px-1 text-emerald-300/60">·</span> MODIS &amp; VIIRS</span>
+            </div>
+
+            <div className="space-y-4">
+              <h1 className="max-w-4xl text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
+                Understand our planet&apos;s fires.
+                <span className="mt-1 block bg-gradient-to-r from-[#FFB04F] via-[#FF8058] to-[#E85D5D] bg-clip-text text-transparent">
+                  See the bigger picture.
+                </span>
+              </h1>
+              <p className="max-w-2xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
+                MODIS and VIIRS see fire at different resolutions and times. FireDNA brings their observations together so you can explore the differences across Bangladesh and South Asia.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap">
+              <Link
+                href="/map"
+                className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#FF9F43] to-[#E85D5D] px-5 py-3 text-sm font-bold text-[#10243A] shadow-lg shadow-orange-950/20 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-950/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFB04F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#10243A] motion-reduce:transition-none"
+              >
+                <span>Explore the fire map</span>
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1 motion-reduce:transition-none" />
+              </Link>
+              <Link
+                href="/compare"
+                className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-5 py-3 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:border-sky-300/40 hover:bg-sky-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B7E1] focus-visible:ring-offset-2 focus-visible:ring-offset-[#10243A] motion-reduce:transition-none"
+              >
+                <Eye className="h-4 w-4 text-[#67B7E1] transition-transform duration-200 group-hover:scale-110 motion-reduce:transition-none" />
+                <span>Compare the sensors</span>
+              </Link>
+              <a
+                href={EXPORT_CSV_URL}
+                download
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B7E1] motion-reduce:transition-none"
+              >
+                <Download className="h-4 w-4" />
+                <span>Download data</span>
+              </a>
+            </div>
+
+            <p className="flex items-start gap-2 text-xs leading-5 text-slate-400">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+              <span>Satellite hotspots are thermal observations, not confirmed fire events. HAI is experimental.</span>
+            </p>
           </div>
-          
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-            Understand Our Planet&apos;s Fires. <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF9F43] to-[#E85D5D]">
-              Decoded Through Satellite DNA.
-            </span>
-          </h1>
-          
-          <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl">
-            Explore active fire observations from NASA Terra, Aqua, Suomi-NPP, and NOAA satellites. 
-            FireDNA harmonizes different satellite resolutions into a unified scientific framework for Bangladesh and South Asia.
-          </p>
 
-          <div className="pt-4 flex flex-wrap items-center gap-3">
-            <Link
-              href="/map"
-              className="inline-flex items-center space-x-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#FF9F43] to-[#E85D5D] text-[#10243A] font-bold text-sm shadow-lg hover:shadow-orange-500/20 hover:scale-[1.02] transition-all"
-            >
-              <span>Explore Interactive Fire Map</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+          <aside className="relative rounded-3xl border border-white/10 bg-slate-950/20 p-5 shadow-xl backdrop-blur-sm sm:p-6" aria-label="Satellite resolution comparison">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-200">A shared view</p>
+                <h2 className="mt-2 text-xl font-bold text-white">Different sensors.<br />One comparison grid.</h2>
+              </div>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-[#67B7E1]">
+                <Grid2X2 className="h-5 w-5" />
+              </span>
+            </div>
 
-            <Link
-              href="/compare"
-              className="inline-flex items-center space-x-2 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-sm border border-white/20 transition-all"
-            >
-              <Eye className="w-4 h-4 text-[#67B7E1]" />
-              <span>Sensor Comparison Lab</span>
-            </Link>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Pixel size changes what each satellite can detect. FireDNA keeps those observations distinct while showing them in a common spatial framework.
+            </p>
 
-            <a
-              href={EXPORT_CSV_URL}
-              className="inline-flex items-center space-x-2 px-4 py-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 font-medium text-xs border border-slate-700 transition-all ml-auto"
-              download
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export CSV</span>
-            </a>
-          </div>
+            <div className="mt-6 space-y-3">
+              <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-3.5">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E85D5D]/15 text-[#FF8A78]">
+                    <Flame className="h-5 w-5" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-bold text-white">MODIS</span>
+                    <span className="block text-xs text-slate-400">Terra &amp; Aqua</span>
+                  </span>
+                </div>
+                <span className="whitespace-nowrap text-sm font-semibold text-slate-200">~1 km</span>
+              </div>
+
+              <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-3.5">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF9F43]/15 text-[#FFB45F]">
+                    <Activity className="h-5 w-5" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-bold text-white">VIIRS</span>
+                    <span className="block text-xs text-slate-400">Suomi-NPP &amp; NOAA</span>
+                  </span>
+                </div>
+                <span className="whitespace-nowrap text-sm font-semibold text-slate-200">375 m</span>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center gap-3 rounded-2xl border border-emerald-300/15 bg-emerald-400/[0.08] p-3.5">
+              <Layers className="h-5 w-5 shrink-0 text-emerald-300" />
+              <span className="text-sm text-emerald-100">
+                Shared comparison grid <strong className="font-bold">· 0.1° cells</strong>
+              </span>
+            </div>
+            <p className="mt-3 text-[11px] leading-5 text-slate-400">
+              Resolution values describe the instruments. The grid and HAI are FireDNA prototype methods, not NASA products.
+            </p>
+          </aside>
         </div>
-
-        {/* Ambient background glow decoration */}
-        <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-gradient-to-br from-[#FF9F43]/20 to-[#E85D5D]/10 rounded-full blur-3xl pointer-events-none" />
       </section>
 
-      {/* Key Live Statistics */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
+      <section className="space-y-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-[#10243A]">Regional Fire Activity Overview</h2>
-            <p className="text-xs text-slate-500">Real-time indicators across Bangladesh & South Asian bounding box</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2D8A64]">Regional overview</p>
+            <h2 className="mt-1 text-xl font-extrabold tracking-tight text-[#10243A] sm:text-2xl">Fire activity at a glance</h2>
+            <p className="mt-1 text-sm text-slate-500">Satellite observations across Bangladesh and South Asia</p>
           </div>
-          <span className="text-xs bg-emerald-50 text-[#2D8A64] border border-emerald-200 px-2.5 py-1 rounded-full font-semibold">
-            Freshness: Past 10 Days
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${summary.is_demo_data ? "border-amber-200 bg-amber-50 text-amber-800" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${summary.is_demo_data ? "bg-amber-500" : "bg-emerald-500"}`} />
+              {summary.is_demo_data ? "Synthetic demo data" : "NASA FIRMS observations"}
+            </span>
+            {summary.latest_observation && (
+              <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600">
+                Latest observation · {summary.latest_observation}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -116,13 +180,13 @@ export default async function HomePage() {
       </section>
 
       {/* Interactive Pathways */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <section className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         
         {/* Card 1: Map Entry */}
-        <div className="rounded-3xl bg-white border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div className="group flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-950/5 motion-reduce:transition-none">
           <div className="space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#FF9F43] flex items-center justify-center">
-              <MapPin className="w-5 h-5" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-[#FF9F43] transition-transform duration-200 group-hover:scale-105 motion-reduce:transition-none">
+              <MapPin className="h-5 w-5" />
             </div>
             <h3 className="text-lg font-bold text-[#10243A]">Interactive Satellite Fire Map</h3>
             <p className="text-sm text-slate-600 leading-relaxed">
@@ -131,18 +195,18 @@ export default async function HomePage() {
           </div>
           <Link
             href="/map"
-            className="mt-5 inline-flex items-center space-x-1.5 text-sm font-semibold text-[#FF9F43] hover:text-orange-600"
+            className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#C76A13] transition-colors hover:text-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF9F43] focus-visible:ring-offset-2"
           >
             <span>Launch Full Screen Map</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
 
         {/* Card 2: Sensor Lab */}
-        <div className="rounded-3xl bg-white border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div className="group flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl hover:shadow-sky-950/5 motion-reduce:transition-none">
           <div className="space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-sky-50 text-[#67B7E1] flex items-center justify-center">
-              <Eye className="w-5 h-5" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-50 text-[#3783A8] transition-transform duration-200 group-hover:scale-105 motion-reduce:transition-none">
+              <Eye className="h-5 w-5" />
             </div>
             <h3 className="text-lg font-bold text-[#10243A]">Sensor Comparison Lab</h3>
             <p className="text-sm text-slate-600 leading-relaxed">
@@ -151,18 +215,18 @@ export default async function HomePage() {
           </div>
           <Link
             href="/compare"
-            className="mt-5 inline-flex items-center space-x-1.5 text-sm font-semibold text-[#67B7E1] hover:text-sky-700"
+            className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#3783A8] transition-colors hover:text-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B7E1] focus-visible:ring-offset-2"
           >
             <span>Enter Comparison Lab</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
 
         {/* Card 3: Calendar & Anomalies */}
-        <div className="rounded-3xl bg-white border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div className="group flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-950/5 motion-reduce:transition-none">
           <div className="space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#2D8A64] flex items-center justify-center">
-              <Activity className="w-5 h-5" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-[#2D8A64] transition-transform duration-200 group-hover:scale-105 motion-reduce:transition-none">
+              <Activity className="h-5 w-5" />
             </div>
             <h3 className="text-lg font-bold text-[#10243A]">Fire Calendar & Anomalies</h3>
             <p className="text-sm text-slate-600 leading-relaxed">
@@ -171,10 +235,10 @@ export default async function HomePage() {
           </div>
           <Link
             href="/calendar"
-            className="mt-5 inline-flex items-center space-x-1.5 text-sm font-semibold text-[#2D8A64] hover:text-emerald-700"
+            className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#2D8A64] transition-colors hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D8A64] focus-visible:ring-offset-2"
           >
             <span>View Fire Calendar</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
       </section>
@@ -207,4 +271,3 @@ export default async function HomePage() {
     </div>
   );
 }
-

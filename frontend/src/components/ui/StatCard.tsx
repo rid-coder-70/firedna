@@ -50,13 +50,13 @@ export default function StatCard({
   const c = COLOR_MAP[color] || COLOR_MAP.orange;
 
   return (
-    <div className={`p-5 rounded-2xl bg-white border ${c.border} shadow-sm hover:shadow-md transition-shadow relative overflow-hidden`}>
+    <div className={`group relative overflow-hidden rounded-2xl border bg-white p-5 shadow-sm ${c.border} transition duration-200 hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none`}>
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{title}</p>
           <div className="text-3xl font-extrabold text-[#10243A] tracking-tight">{value}</div>
         </div>
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${c.iconBg}`}>
+        <div className={`flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105 motion-reduce:transition-none ${c.iconBg}`}>
           <Icon className="w-5 h-5" />
         </div>
       </div>
@@ -77,4 +77,3 @@ export default function StatCard({
     </div>
   );
 }
-
