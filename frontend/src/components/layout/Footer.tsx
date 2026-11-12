@@ -17,7 +17,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-xs sm:text-sm text-[#F7F6EF]/75 leading-relaxed max-w-md">
-              A minimal scientific data platform developed for the <strong>NASA Space Apps Challenge 2026</strong>.
+              A scientific environmental data platform developed for the <strong>NASA Space Apps Challenge 2026</strong>.
               FireDNA bridges MODIS (~1 km) and VIIRS (375 m) active-fire observations through spatial and temporal harmonization.
             </p>
             <p className="text-xs text-[#F7F6EF]/50">
@@ -65,7 +65,7 @@ export default function Footer() {
 
         <div className="mt-8 pt-6 border-t border-white/10 text-xs text-[#F7F6EF]/50 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p>© 2026 FireDNA • NASA Space Apps Challenge</p>
-          <p>60% Cream White · 30% Navy Blue · 10% Fire Accent</p>
+          <p>Understand Fire · Connect Data · Protect Our Planet</p>
         </div>
       </div>
     </footer>

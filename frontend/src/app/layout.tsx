@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import DemoBanner from "@/components/ui/DemoBanner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,7 +16,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen flex flex-col bg-[#F7F6EF] text-[#10243A]">
-        <DemoBanner isDemo={true} />
         <Navbar />
         <main className="flex-1 flex flex-col">
           {children}
@@ -27,4 +25,3 @@ export default function RootLayout({
     </html>
   );
 }
-

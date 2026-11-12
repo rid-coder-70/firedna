@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { GeoJSONFeatureCollection, HarmonizedCell } from "@/lib/types";
-import { Layers, Info, Flame, Compass, RefreshCw } from "lucide-react";
+import { Layers, Info, Compass, Map as MapIcon } from "lucide-react";
 
 interface FireMapProps {
   hotspotsData: GeoJSONFeatureCollection;
@@ -23,6 +23,7 @@ export default function FireMap({
 }: FireMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const baseTileRef = useRef<L.TileLayer | null>(null);
   const modisLayerRef = useRef<L.LayerGroup | null>(null);
   const viirsLayerRef = useRef<L.LayerGroup | null>(null);
   const gridLayerRef = useRef<L.LayerGroup | null>(null);
@@ -30,9 +31,9 @@ export default function FireMap({
   const [showModis, setShowModis] = useState(true);
   const [showViirs, setShowViirs] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
-  const [selectedHotspot, setSelectedHotspot] = useState<any | null>(null);
+  const [baseStyle, setBaseStyle] = useState<"osm" | "terrain">("osm");
 
-  // Initialize Map safely and force invalidateSize
+  // Initialize Map with 100% Free OpenStreetMap Tiles (No API Key Required)
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
@@ -41,28 +42,18 @@ export default function FireMap({
       zoom: initialZoom,
       zoomControl: false,
       minZoom: 4,
-      maxZoom: 16,
+      maxZoom: 18,
     });
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    // Primary CartoDB Voyager Tiles with automatic OpenStreetMap fallback
-    const tileLayer = L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-      {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a> • NASA FIRMS',
-        maxZoom: 19,
-      }
-    );
+    const osmLayer = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors • NASA FIRMS',
+      maxZoom: 19,
+    }).addTo(map);
 
-    tileLayer.on("tileerror", () => {
-      // Fallback to standard OpenStreetMap if Carto CDN is blocked
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-      }).addTo(map);
-    });
-
-    tileLayer.addTo(map);
+    baseTileRef.current = osmLayer;
 
     // Create Layer Groups
     const gridGroup = L.layerGroup().addTo(map);
@@ -74,7 +65,6 @@ export default function FireMap({
     viirsLayerRef.current = viirsGroup;
     mapInstanceRef.current = map;
 
-    // Force Leaflet to recalculate container dimensions after layout paint
     const timer = setTimeout(() => {
       map.invalidateSize();
     }, 200);
@@ -85,6 +75,31 @@ export default function FireMap({
       mapInstanceRef.current = null;
     };
   }, [initialLat, initialLon, initialZoom]);
+
+  // Switch Base Map Style (Standard OSM vs Esri World Street/Topo - both 100% free without API keys)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !baseTileRef.current) return;
+
+    map.removeLayer(baseTileRef.current);
+
+    const nextUrl =
+      baseStyle === "osm"
+        ? "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}";
+
+    const nextAttribution =
+      baseStyle === "osm"
+        ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> • NASA FIRMS'
+        : "Tiles &copy; Esri • NASA FIRMS";
+
+    const nextLayer = L.tileLayer(nextUrl, {
+      attribution: nextAttribution,
+      maxZoom: baseStyle === "osm" ? 19 : 8,
+    }).addTo(map);
+
+    baseTileRef.current = nextLayer;
+  }, [baseStyle]);
 
   // Update Layers when data or toggles change
   useEffect(() => {
@@ -104,7 +119,6 @@ export default function FireMap({
         ];
 
         const score = cell.hai_score ?? 0;
-        // Strict 60/30/10 palette for cells: Navy for low, Amber for moderate, Fire-Orange/Red for high
         let strokeColor = "#10243A";
         let fillColor = "#10243A";
         if (score > 0.65) {
@@ -150,7 +164,6 @@ export default function FireMap({
         if (isModis && !showModis) return;
         if (!isModis && !showViirs) return;
 
-        // Visual distinction between MODIS (~1km, Navy/Crimson) and VIIRS (375m, Fire Orange)
         const radius = isModis ? 8 : 5.5;
         const fillColor = isModis ? "#E85D5D" : "#FF6B2B";
         const borderColor = "#10243A";
@@ -185,7 +198,6 @@ export default function FireMap({
         `;
 
         marker.bindPopup(popupHtml);
-        marker.on("click", () => setSelectedHotspot(p));
 
         if (isModis) {
           modisLayerRef.current?.addLayer(marker);
