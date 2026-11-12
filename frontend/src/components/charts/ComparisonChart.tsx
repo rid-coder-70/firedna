@@ -2,7 +2,7 @@
 
 import {
   ResponsiveContainer, ComposedChart, Bar, Line,
-  XAxis, YAxis, Tooltip, CartesianGrid, Legend
+  XAxis, YAxis, Tooltip, CartesianGrid
 } from "recharts";
 
 interface ComparisonChartProps {
@@ -22,7 +22,7 @@ export default function ComparisonChart({
     date: d,
     MODIS: modisCounts[i] || 0,
     VIIRS: viirsCounts[i] || 0,
-    HAI: (haiScores[i] || 0) * 100, // scaled 0-100 for visual parity with count axis
+    HAI: (haiScores[i] || 0) * 100,
     rawHai: haiScores[i] || 0,
   }));
 
@@ -30,31 +30,36 @@ export default function ComparisonChart({
     <div className="w-full h-80 pt-2">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-          <XAxis dataKey="date" stroke="#64748B" fontSize={12} tickLine={false} />
-          <YAxis stroke="#64748B" fontSize={12} tickLine={false} axisLine={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#E2DEC9" vertical={false} />
+          <XAxis dataKey="date" stroke="#4A607A" fontSize={12} tickLine={false} />
+          <YAxis stroke="#4A607A" fontSize={12} tickLine={false} axisLine={false} />
           <Tooltip
             content={({ active, payload, label }) => {
               if (active && payload && payload.length) {
                 const item = payload[0].payload;
                 return (
-                  <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-md text-xs space-y-1">
-                    <p className="font-bold text-[#10243A]">{label}</p>
-                    <p className="text-[#E85D5D]">MODIS Detections: {item.MODIS}</p>
-                    <p className="text-[#FF9F43]">VIIRS Detections: {item.VIIRS}</p>
-                    <p className="text-[#2D8A64] font-semibold">Harmonized HAI: {item.rawHai.toFixed(3)}</p>
+                  <div className="bg-[#FCFBF7] p-3.5 rounded-xl border border-[#E2DEC9] shadow-md text-xs space-y-1">
+                    <p className="font-extrabold text-[#10243A] border-b border-[#E2DEC9] pb-1 mb-1">{label}</p>
+                    <p className="text-[#E85D5D] font-medium">MODIS (~1 km): <strong>{item.MODIS}</strong></p>
+                    <p className="text-[#FF6B2B] font-medium">VIIRS (375 m): <strong>{item.VIIRS}</strong></p>
+                    <p className="text-[#10243A] font-bold">Harmonized HAI: {item.rawHai.toFixed(3)}</p>
                   </div>
                 );
               }
               return null;
             }}
           />
-          <Bar dataKey="MODIS" fill="#E85D5D" radius={[4, 4, 0, 0]} maxBarSize={32} />
-          <Bar dataKey="VIIRS" fill="#FF9F43" radius={[4, 4, 0, 0]} maxBarSize={32} />
-          <Line type="monotone" dataKey="HAI" stroke="#2D8A64" strokeWidth={3} dot={{ r: 4, fill: "#2D8A64" }} />
+          <Bar dataKey="MODIS" fill="#E85D5D" radius={[4, 4, 0, 0]} maxBarSize={28} />
+          <Bar dataKey="VIIRS" fill="#FF6B2B" radius={[4, 4, 0, 0]} maxBarSize={28} />
+          <Line
+            type="monotone"
+            dataKey="HAI"
+            stroke="#10243A"
+            strokeWidth={3}
+            dot={{ r: 4, fill: "#10243A" }}
+          />
         </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
 }
-

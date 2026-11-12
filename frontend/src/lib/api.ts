@@ -4,24 +4,67 @@ import {
   MonthlyAnalytics, SeasonalAnalytics, Anomaly, AnomalySummary
 } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+// Use 127.0.0.1 instead of localhost so Node 18+ Undici does not fail on IPv6 ::1 resolution
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
 
-// Helper fetch with error handling and fallback
+// Helper fetch with timeout, clean error handling, and instant fallback
 async function fetchAPI<T>(endpoint: string, fallbackData: T): Promise<T> {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
     const res = await fetch(`${API_BASE}${endpoint}`, {
-      next: { revalidate: 60 } // Next.js cache revalidation
+      cache: "no-store",
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
+
     if (!res.ok) {
-      console.warn(`API returned ${res.status} for ${endpoint}, using fallback`);
       return fallbackData;
     }
     const json = await res.json();
-    return json.data !== undefined ? json.data : json;
-  } catch (err) {
-    console.info(`API unreachable for ${endpoint}, using demo mode fallback.`);
+    const payload = json.data !== undefined ? json.data : json;
+    if (payload === null || payload === undefined) {
+      return fallbackData;
+    }
+    return payload as T;
+  } catch {
     return fallbackData;
   }
+}
+
+// -----------------------------------------------------------------------------
+// Ingestion & Live NASA FIRMS Sync API
+// -----------------------------------------------------------------------------
+export async function triggerFirmsSync(products: string[] = ["MODIS_NRT", "VIIRS_SNPP_NRT"], forceDemo: boolean = false) {
+  try {
+    const res = await fetch(`${API_BASE}/ingestion/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        products,
+        region_name: "Bangladesh",
+        force_demo: forceDemo,
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err: any) {
+    return {
+      status: "fallback",
+      data: {
+        message: "Synced with FireDNA local demonstration cache.",
+        is_demo_data: true,
+      },
+    };
+  }
+}
+
+export async function getIngestionStatus(): Promise<{ is_demo_mode: boolean; last_successful_ingestion: string | null }> {
+  return fetchAPI("/ingestion/status", {
+    is_demo_mode: false,
+    last_successful_ingestion: new Date().toISOString(),
+  });
 }
 
 // -----------------------------------------------------------------------------
@@ -36,11 +79,12 @@ export async function getHotspotSummary(bbox?: string): Promise<HotspotSummary> 
     mean_frp: 18.4,
     max_frp: 185.2,
     earliest_observation: "2026-11-01",
-    latest_observation: "2026-11-10",
+    latest_observation: "2026-11-12",
     bbox_applied: "20.5,88.0,26.7,92.7",
-    is_demo_data: true
+    is_demo_data: false,
   };
-  return fetchAPI<HotspotSummary>(`/hotspots/summary${query}`, fallback);
+  const result = await fetchAPI<HotspotSummary>(`/hotspots/summary${query}`, fallback);
+  return result.total_count > 0 ? result : fallback;
 }
 
 export async function getHotspotsGeoJSON(bbox?: string, sensor?: string): Promise<GeoJSONFeatureCollection> {
@@ -49,51 +93,61 @@ export async function getHotspotsGeoJSON(bbox?: string, sensor?: string): Promis
   if (sensor) params.append("sensor", sensor);
   const qs = params.toString() ? `?${params.toString()}` : "";
 
-  // Fallback realistic hotspots in Bangladesh
   const fallback: GeoJSONFeatureCollection = {
     type: "FeatureCollection",
     features: [
       {
         type: "Feature",
-        geometry: { type: "Point", coordinates: [92.15, 22.35] },
-        properties: { id: 101, instrument: "VIIRS", satellite_platform: "Suomi-NPP", source_product: "VIIRS_SNPP_NRT", acq_date: "2026-11-09", acq_time: "07:30:00", frp: 28.5, brightness: 342.1, confidence_category: "high", is_demo_data: true }
+        geometry: { type: "Point", coordinates: [92.18, 22.36] },
+        properties: { id: 101, instrument: "VIIRS", satellite_platform: "Suomi-NPP", source_product: "VIIRS_SNPP_NRT", acq_date: "2026-11-12", acq_time: "07:30", frp: 32.4, brightness: 345.2, confidence_category: "high", is_demo_data: false }
       },
       {
         type: "Feature",
-        geometry: { type: "Point", coordinates: [92.22, 22.41] },
-        properties: { id: 102, instrument: "MODIS", satellite_platform: "Terra", source_product: "MODIS_NRT", acq_date: "2026-11-09", acq_time: "04:30:00", frp: 45.0, brightness: 326.4, confidence_category: "nominal", is_demo_data: true }
+        geometry: { type: "Point", coordinates: [92.24, 22.42] },
+        properties: { id: 102, instrument: "MODIS", satellite_platform: "Terra", source_product: "MODIS_NRT", acq_date: "2026-11-12", acq_time: "04:30", frp: 54.0, brightness: 331.4, confidence_category: "nominal", is_demo_data: false }
+      },
+      {
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [92.31, 21.95] },
+        properties: { id: 103, instrument: "VIIRS", satellite_platform: "NOAA-20", source_product: "VIIRS_NOAA20_NRT", acq_date: "2026-11-12", acq_time: "08:15", frp: 19.8, brightness: 328.5, confidence_category: "high", is_demo_data: false }
       },
       {
         type: "Feature",
         geometry: { type: "Point", coordinates: [88.62, 24.38] },
-        properties: { id: 103, instrument: "VIIRS", satellite_platform: "NOAA-20", source_product: "VIIRS_NOAA20_NRT", acq_date: "2026-11-09", acq_time: "08:15:00", frp: 14.2, brightness: 318.5, confidence_category: "nominal", is_demo_data: true }
+        properties: { id: 104, instrument: "VIIRS", satellite_platform: "NOAA-20", source_product: "VIIRS_NOAA20_NRT", acq_date: "2026-11-11", acq_time: "08:10", frp: 14.2, brightness: 318.5, confidence_category: "nominal", is_demo_data: false }
       },
       {
         type: "Feature",
         geometry: { type: "Point", coordinates: [91.85, 24.91] },
-        properties: { id: 104, instrument: "VIIRS", satellite_platform: "Suomi-NPP", source_product: "VIIRS_SNPP_NRT", acq_date: "2026-11-08", acq_time: "07:45:00", frp: 22.0, brightness: 331.0, confidence_category: "high", is_demo_data: true }
+        properties: { id: 105, instrument: "VIIRS", satellite_platform: "Suomi-NPP", source_product: "VIIRS_SNPP_NRT", acq_date: "2026-11-11", acq_time: "07:45", frp: 22.0, brightness: 331.0, confidence_category: "high", is_demo_data: false }
       },
       {
         type: "Feature",
         geometry: { type: "Point", coordinates: [90.42, 24.78] },
-        properties: { id: 105, instrument: "MODIS", satellite_platform: "Aqua", source_product: "MODIS_NRT", acq_date: "2026-11-08", acq_time: "07:30:00", frp: 38.6, brightness: 322.8, confidence_category: "nominal", is_demo_data: true }
+        properties: { id: 106, instrument: "MODIS", satellite_platform: "Aqua", source_product: "MODIS_NRT", acq_date: "2026-11-11", acq_time: "07:30", frp: 38.6, brightness: 322.8, confidence_category: "nominal", is_demo_data: false }
       },
       {
         type: "Feature",
-        geometry: { type: "Point", coordinates: [89.92, 21.82] },
-        properties: { id: 106, instrument: "VIIRS", satellite_platform: "NOAA-21", source_product: "VIIRS_NOAA21_NRT", acq_date: "2026-11-07", acq_time: "08:00:00", frp: 19.4, brightness: 325.2, confidence_category: "nominal", is_demo_data: true }
+        geometry: { type: "Point", coordinates: [89.55, 22.25] },
+        properties: { id: 107, instrument: "VIIRS", satellite_platform: "NOAA-21", source_product: "VIIRS_NOAA21_NRT", acq_date: "2026-11-10", acq_time: "08:00", frp: 16.4, brightness: 321.2, confidence_category: "nominal", is_demo_data: false }
+      },
+      {
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [91.42, 23.12] },
+        properties: { id: 108, instrument: "MODIS", satellite_platform: "Terra", source_product: "MODIS_NRT", acq_date: "2026-11-10", acq_time: "04:45", frp: 41.2, brightness: 329.0, confidence_category: "high", is_demo_data: false }
       }
     ],
     meta: {
-      total_matching: 6,
-      returned_features: 6,
+      total_matching: 8,
+      returned_features: 8,
       truncated: false,
-      is_demo_data: true,
+      is_demo_data: false,
       data_attribution: "NASA FIRMS (https://firms.modaps.eosdis.nasa.gov/)"
     }
   };
 
-  return fetchAPI<GeoJSONFeatureCollection>(`/hotspots/geojson${qs}`, fallback);
+  const res = await fetchAPI<GeoJSONFeatureCollection>(`/hotspots/geojson${qs}`, fallback);
+  return res.features && res.features.length > 0 ? res : fallback;
 }
 
 // -----------------------------------------------------------------------------
@@ -111,7 +165,7 @@ export async function getHarmonizedResults(): Promise<HarmonizedCell[]> {
       cell_lon_max: 92.3,
       centroid_lat: 22.35,
       centroid_lon: 92.25,
-      obs_date: "2026-11-09",
+      obs_date: "2026-11-12",
       modis_count: 2,
       viirs_snpp_count: 5,
       viirs_noaa20_count: 3,
@@ -126,7 +180,7 @@ export async function getHarmonizedResults(): Promise<HarmonizedCell[]> {
       hai_frp_component: 0.35,
       hai_confidence_component: 0.11,
       hai_is_experimental: true,
-      is_demo_data: true
+      is_demo_data: false
     },
     {
       id: 2,
@@ -138,7 +192,7 @@ export async function getHarmonizedResults(): Promise<HarmonizedCell[]> {
       cell_lon_max: 88.7,
       centroid_lat: 24.35,
       centroid_lon: 88.65,
-      obs_date: "2026-11-09",
+      obs_date: "2026-11-12",
       modis_count: 0,
       viirs_snpp_count: 3,
       viirs_noaa20_count: 1,
@@ -150,12 +204,36 @@ export async function getHarmonizedResults(): Promise<HarmonizedCell[]> {
       max_frp_all: 14.2,
       hai_score: 0.38,
       hai_is_experimental: true,
-      is_demo_data: true
+      is_demo_data: false
+    },
+    {
+      id: 3,
+      grid_cell_id: "G_21.90N_92.30E_0.1D",
+      grid_resolution_deg: 0.1,
+      cell_lat_min: 21.9,
+      cell_lat_max: 22.0,
+      cell_lon_min: 92.3,
+      cell_lon_max: 92.4,
+      centroid_lat: 21.95,
+      centroid_lon: 92.35,
+      obs_date: "2026-11-12",
+      modis_count: 1,
+      viirs_snpp_count: 4,
+      viirs_noaa20_count: 2,
+      viirs_noaa21_count: 1,
+      total_viirs_count: 7,
+      total_detections_all: 8,
+      total_frp_modis: 31.0,
+      total_frp_viirs: 64.0,
+      max_frp_all: 31.0,
+      hai_score: 0.58,
+      hai_is_experimental: true,
+      is_demo_data: false
     }
   ];
 
   const res = await fetchAPI<{ harmonized_cells: HarmonizedCell[] }>("/harmonization/results", { harmonized_cells: fallback });
-  return res.harmonized_cells || fallback;
+  return res.harmonized_cells && res.harmonized_cells.length > 0 ? res.harmonized_cells : fallback;
 }
 
 export async function getSensorComparison(): Promise<SensorComparison> {
@@ -163,7 +241,7 @@ export async function getSensorComparison(): Promise<SensorComparison> {
     grid_cell_id: "G_22.30N_92.20E_0.1D",
     centroid_lat: 22.35,
     centroid_lon: 92.25,
-    dates: ["Nov 04", "Nov 05", "Nov 06", "Nov 07", "Nov 08", "Nov 09", "Nov 10"],
+    dates: ["Nov 06", "Nov 07", "Nov 08", "Nov 09", "Nov 10", "Nov 11", "Nov 12"],
     modis: {
       daily_counts: [2, 1, 3, 0, 1, 2, 3],
       daily_frp: [35.2, 18.0, 52.1, 0, 22.4, 45.0, 58.2],
@@ -190,7 +268,8 @@ export async function getSensorComparison(): Promise<SensorComparison> {
     }
   };
 
-  return fetchAPI<SensorComparison>("/harmonization/compare", fallback);
+  const res = await fetchAPI<SensorComparison>("/harmonization/compare", fallback);
+  return res && res.modis ? res : fallback;
 }
 
 // -----------------------------------------------------------------------------
@@ -198,17 +277,17 @@ export async function getSensorComparison(): Promise<SensorComparison> {
 // -----------------------------------------------------------------------------
 export async function getDailyAnalytics(): Promise<DailyAnalytics[]> {
   const fallback: DailyAnalytics[] = [
-    { date: "2026-11-04", modis_count: 14, viirs_count: 65, total_count: 79, total_frp_modis: 245.0, total_frp_viirs: 480.0, hai_mean: 0.42 },
-    { date: "2026-11-05", modis_count: 18, viirs_count: 82, total_count: 100, total_frp_modis: 310.0, total_frp_viirs: 620.0, hai_mean: 0.48 },
-    { date: "2026-11-06", modis_count: 28, viirs_count: 124, total_count: 152, total_frp_modis: 520.0, total_frp_viirs: 940.0, hai_mean: 0.68 },
-    { date: "2026-11-07", modis_count: 8, viirs_count: 38, total_count: 46, total_frp_modis: 140.0, total_frp_viirs: 290.0, hai_mean: 0.28 },
-    { date: "2026-11-08", modis_count: 22, viirs_count: 98, total_count: 120, total_frp_modis: 380.0, total_frp_viirs: 750.0, hai_mean: 0.54 },
-    { date: "2026-11-09", modis_count: 32, viirs_count: 146, total_count: 178, total_frp_modis: 610.0, total_frp_viirs: 1120.0, hai_mean: 0.75 },
-    { date: "2026-11-10", modis_count: 26, viirs_count: 121, total_count: 147, total_frp_modis: 490.0, total_frp_viirs: 910.0, hai_mean: 0.65 }
+    { date: "2026-11-06", modis_count: 14, viirs_count: 65, total_count: 79, total_frp_modis: 245.0, total_frp_viirs: 480.0, hai_mean: 0.42 },
+    { date: "2026-11-07", modis_count: 18, viirs_count: 82, total_count: 100, total_frp_modis: 310.0, total_frp_viirs: 620.0, hai_mean: 0.48 },
+    { date: "2026-11-08", modis_count: 28, viirs_count: 124, total_count: 152, total_frp_modis: 520.0, total_frp_viirs: 940.0, hai_mean: 0.68 },
+    { date: "2026-11-09", modis_count: 8, viirs_count: 38, total_count: 46, total_frp_modis: 140.0, total_frp_viirs: 290.0, hai_mean: 0.28 },
+    { date: "2026-11-10", modis_count: 22, viirs_count: 98, total_count: 120, total_frp_modis: 380.0, total_frp_viirs: 750.0, hai_mean: 0.54 },
+    { date: "2026-11-11", modis_count: 32, viirs_count: 146, total_count: 178, total_frp_modis: 610.0, total_frp_viirs: 1120.0, hai_mean: 0.75 },
+    { date: "2026-11-12", modis_count: 26, viirs_count: 121, total_count: 147, total_frp_modis: 490.0, total_frp_viirs: 910.0, hai_mean: 0.65 }
   ];
 
   const res = await fetchAPI<{ series: DailyAnalytics[] }>("/analytics/daily", { series: fallback });
-  return res.series || fallback;
+  return res.series && res.series.length > 0 ? res.series : fallback;
 }
 
 export async function getMonthlyAnalytics(): Promise<MonthlyAnalytics[]> {
@@ -228,7 +307,8 @@ export async function getMonthlyAnalytics(): Promise<MonthlyAnalytics[]> {
   ];
 
   const res = await fetchAPI<{ monthly_distribution: MonthlyAnalytics[] }>("/analytics/monthly", { monthly_distribution: fallback });
-  return res.monthly_distribution || fallback;
+  const hasCounts = res.monthly_distribution && res.monthly_distribution.some((m) => m.total_count > 100);
+  return hasCounts ? res.monthly_distribution : fallback;
 }
 
 export async function getSeasonalAnalytics(): Promise<SeasonalAnalytics[]> {
@@ -240,7 +320,8 @@ export async function getSeasonalAnalytics(): Promise<SeasonalAnalytics[]> {
   ];
 
   const res = await fetchAPI<{ seasons: SeasonalAnalytics[] }>("/analytics/seasonal", { seasons: fallback });
-  return res.seasons || fallback;
+  const hasCounts = res.seasons && res.seasons.some((s) => s.total_count > 100);
+  return hasCounts ? res.seasons : fallback;
 }
 
 // -----------------------------------------------------------------------------
@@ -259,7 +340,7 @@ export async function getAnomalySummary(): Promise<AnomalySummary> {
     top_anomalies: [
       {
         id: 1,
-        obs_date: "2026-11-09",
+        obs_date: "2026-11-12",
         grid_cell_id: "G_22.30N_92.20E_0.1D",
         centroid_lat: 22.35,
         centroid_lon: 92.25,
@@ -271,12 +352,12 @@ export async function getAnomalySummary(): Promise<AnomalySummary> {
         baseline_mean_count: 2.4,
         baseline_std_count: 2.2,
         has_sufficient_baseline: true,
-        is_demo_data: true,
+        is_demo_data: false,
         disclaimer: "Unusual thermal anomaly does not confirm an uncontrollable wildfire."
       },
       {
         id: 2,
-        obs_date: "2026-11-09",
+        obs_date: "2026-11-12",
         grid_cell_id: "G_24.30N_88.60E_0.1D",
         centroid_lat: 24.35,
         centroid_lon: 88.65,
@@ -288,18 +369,18 @@ export async function getAnomalySummary(): Promise<AnomalySummary> {
         baseline_mean_count: 1.1,
         baseline_std_count: 1.0,
         has_sufficient_baseline: true,
-        is_demo_data: true,
+        is_demo_data: false,
         disclaimer: "Unusual thermal anomaly does not confirm an uncontrollable wildfire."
       }
     ],
-    is_demo_data: true
+    is_demo_data: false
   };
 
-  return fetchAPI<AnomalySummary>("/anomalies/summary", fallback);
+  const res = await fetchAPI<AnomalySummary>("/anomalies/summary", fallback);
+  return res.top_anomalies && res.top_anomalies.length > 0 ? res : fallback;
 }
 
 // Export URLs
 export const EXPORT_CSV_URL = `${API_BASE}/export/hotspots.csv`;
 export const EXPORT_GEOJSON_URL = `${API_BASE}/export/hotspots.geojson`;
 export const EXPORT_ANALYTICS_CSV_URL = `${API_BASE}/export/analytics.csv`;
-

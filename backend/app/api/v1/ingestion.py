@@ -19,35 +19,52 @@ router = APIRouter(prefix="/ingestion", tags=["Ingestion"])
 
 @router.post("/run", response_model=dict)
 async def trigger_ingestion(
-    request: IngestionRunRequest,
-    background_tasks: BackgroundTasks,
+    request: Optional[IngestionRunRequest] = None,
+    background_tasks: BackgroundTasks = None,
     db: Session = Depends(get_db)
 ):
     """
     Trigger NASA FIRMS ingestion run for specified products and region.
     If no API key is configured or force_demo is True, ingests synthetic demo data.
+    Also runs spatial/temporal harmonization and anomaly detection automatically.
     """
+    req = request or IngestionRunRequest()
     service = IngestionService(db)
-    bbox_dict = request.bbox.dict() if request.bbox else settings.BANGLADESH_BBOX
+    bbox_dict = req.bbox.dict() if req.bbox else settings.BANGLADESH_BBOX
 
-    # Synchronously run ingestion or background task
+    # Synchronously run ingestion
     log_ids = await service.run_ingestion(
-        products=request.products,
+        products=req.products,
         bbox=bbox_dict,
-        start_date=request.start_date,
-        end_date=request.end_date,
-        region_name=request.region_name,
-        force_demo=request.force_demo
+        start_date=req.start_date,
+        end_date=req.end_date,
+        region_name=req.region_name,
+        force_demo=req.force_demo
     )
+
+    # Also auto-run harmonization so new hotspots immediately populate harmonized cells
+    from app.services.harmonization_service import HarmonizationService
+    from app.analytics.anomaly_detection import AnomalyDetector
+    harm_service = HarmonizationService(db)
+    harm_service.run_harmonization(
+        grid_resolution_deg=settings.DEFAULT_GRID_RESOLUTION_DEG,
+        temporal_window_hours=settings.DEFAULT_TEMPORAL_WINDOW_HOURS,
+        start_date=req.start_date,
+        end_date=req.end_date,
+        bbox=bbox_dict,
+        recompute=True
+    )
+    detector = AnomalyDetector(db)
+    detector.detect_anomalies_for_date(req.end_date or date.today())
 
     return {
         "status": "success",
         "data": {
             "ingestion_run_ids": log_ids,
-            "message": f"Ingestion processed for {len(log_ids)} products",
-            "is_demo_data": service.firms_client.is_demo_mode or request.force_demo
+            "message": f"NASA FIRMS sync & harmonization completed for {len(log_ids)} satellite products.",
+            "is_demo_data": service.firms_client.is_demo_mode or req.force_demo
         },
-        "meta": ResponseMeta(is_demo_data=service.firms_client.is_demo_mode or request.force_demo)
+        "meta": ResponseMeta(is_demo_data=service.firms_client.is_demo_mode or req.force_demo)
     }
 
 

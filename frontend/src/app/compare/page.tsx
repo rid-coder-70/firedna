@@ -1,5 +1,5 @@
 import { getSensorComparison } from "@/lib/api";
-import { SplitSquareVertical, Layers, Activity, ShieldCheck, Sparkles, Info } from "lucide-react";
+import { SplitSquareVertical, Info } from "lucide-react";
 import EducationCard from "@/components/education/EducationCard";
 import ComparisonChart from "@/components/charts/ComparisonChart";
 
@@ -8,28 +8,27 @@ export default async function ComparePage() {
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8">
-      
       {/* Page Header */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-3">
-        <div className="flex items-center space-x-2">
-          <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#FF9F43] flex items-center justify-center">
-            <SplitSquareVertical className="w-6 h-6" />
+      <div className="bg-[#FCFBF7] p-6 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm space-y-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-[#10243A] text-[#FF6B2B] flex items-center justify-center">
+            <SplitSquareVertical className="w-5 h-5" />
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#10243A]">
               Sensor Comparison Laboratory
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500">
-              Examining optical discrepancies between NASA MODIS and VIIRS satellite instruments.
+            <p className="text-xs sm:text-sm text-[#4A607A]">
+              Examining optical discrepancies between NASA MODIS (~1 km) and VIIRS (375 m) satellite instruments.
             </p>
           </div>
         </div>
 
-        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-700 leading-relaxed flex items-start space-x-3">
-          <Info className="w-4 h-4 text-[#67B7E1] flex-shrink-0 mt-0.5" />
+        <div className="p-4 bg-[#F7F6EF] rounded-xl border border-[#E2DEC9] text-xs text-[#10243A] leading-relaxed flex items-start space-x-3">
+          <Info className="w-4 h-4 text-[#FF6B2B] shrink-0 mt-0.5" />
           <p>
-            <strong>Core Scientific Premise:</strong> Satellites with different optical resolutions see the same fire events differently. 
-            VIIRS (375 m) routinely detects 3x to 6x more hotspots than MODIS (1 km) because smaller pixels resolve small agricultural burns. 
+            <strong>Core Scientific Premise:</strong> Satellites with different optical resolutions see the same fire events differently.
+            VIIRS (375 m) routinely detects 3× to 6× more hotspots than MODIS (1 km) because smaller pixels resolve small agricultural burns.
             FireDNA harmonizes them onto a shared 0.1° grid cell framework.
           </p>
         </div>
@@ -37,129 +36,145 @@ export default async function ComparePage() {
 
       {/* 3-Column Synchronized Laboratory */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
         {/* Column 1: MODIS */}
-        <div className="rounded-3xl bg-white border-2 border-[#E85D5D]/40 p-6 shadow-sm space-y-4 relative overflow-hidden">
-          <div className="flex items-center justify-between">
+        <div className="rounded-2xl bg-[#FCFBF7] border border-[#E2DEC9] p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E2DEC9] pb-3">
             <div className="flex items-center space-x-2">
-              <span className="w-3.5 h-3.5 rounded-full bg-[#E85D5D]"></span>
-              <h2 className="font-bold text-lg text-[#10243A]">NASA MODIS</h2>
+              <span className="w-3 h-3 rounded-full bg-[#E85D5D]"></span>
+              <h2 className="font-extrabold text-lg text-[#10243A]">NASA MODIS</h2>
             </div>
-            <span className="text-[10px] font-semibold bg-red-50 text-[#E85D5D] px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-[#10243A]/10 text-[#10243A] px-2 py-0.5 rounded-md">
               Legacy Heritage
             </span>
           </div>
 
-          <div className="space-y-2 text-xs text-slate-600">
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-400">Satellites</span>
-              <strong className="text-slate-800">{comparison.modis.platform}</strong>
+          <div className="space-y-2.5 text-xs text-[#4A607A]">
+            <div className="flex justify-between py-1 border-b border-[#E2DEC9]/60">
+              <span>Satellites</span>
+              <strong className="text-[#10243A]">{comparison.modis.platform}</strong>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-400">Spatial Resolution</span>
-              <strong className="text-slate-800">{comparison.modis.spatial_resolution}</strong>
+            <div className="flex justify-between py-1 border-b border-[#E2DEC9]/60">
+              <span>Spatial Resolution</span>
+              <strong className="text-[#10243A]">{comparison.modis.spatial_resolution}</strong>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-400">Detection Threshold</span>
-              <strong className="text-slate-800">{comparison.modis.detection_threshold}</strong>
+            <div className="flex justify-between py-1 border-b border-[#E2DEC9]/60">
+              <span>Detection Threshold</span>
+              <strong className="text-[#10243A]">{comparison.modis.detection_threshold}</strong>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-400">Total Detections</span>
-              <strong className="text-2xl text-[#E85D5D] font-extrabold">{comparison.modis.total_period_detections}</strong>
+            <div className="flex justify-between items-baseline pt-1">
+              <span>Total Detections</span>
+              <strong className="text-2xl text-[#10243A] font-extrabold">
+                {comparison.modis.total_period_detections}
+              </strong>
             </div>
           </div>
 
-          <div className="p-3 bg-red-50/50 rounded-xl text-[11px] text-red-950 leading-relaxed">
+          <div className="p-3 bg-[#F7F6EF] border border-[#E2DEC9] rounded-xl text-[11px] text-[#4A607A] leading-relaxed">
             Fewer detections due to coarser 1 km footprint, but provides over 20+ years of uninterrupted historical baseline records since 2000.
           </div>
         </div>
 
         {/* Column 2: VIIRS */}
-        <div className="rounded-3xl bg-white border-2 border-[#FF9F43]/40 p-6 shadow-sm space-y-4 relative overflow-hidden">
-          <div className="flex items-center justify-between">
+        <div className="rounded-2xl bg-[#FCFBF7] border border-[#E2DEC9] p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E2DEC9] pb-3">
             <div className="flex items-center space-x-2">
-              <span className="w-3.5 h-3.5 rounded-full bg-[#FF9F43]"></span>
-              <h2 className="font-bold text-lg text-[#10243A]">NASA VIIRS</h2>
+              <span className="w-3 h-3 rounded-full bg-[#FF6B2B]"></span>
+              <h2 className="font-extrabold text-lg text-[#10243A]">NASA VIIRS</h2>
             </div>
-            <span className="text-[10px] font-semibold bg-orange-50 text-[#FF9F43] px-2 py-0.5 rounded-full">
-              High Resolution
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-[#FFF2EB] text-[#FF6B2B] px-2 py-0.5 rounded-md">
+              375 m High-Res
             </span>
           </div>
 
-          <div className="space-y-2 text-xs text-slate-600">
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-400">Satellites</span>
-              <strong className="text-slate-800">{comparison.viirs.platforms.join(", ")}</strong>
+          <div className="space-y-2.5 text-xs text-[#4A607A]">
+            <div className="flex justify-between py-1 border-b border-[#E2DEC9]/60">
+              <span>Satellites</span>
+              <strong className="text-[#10243A]">{comparison.viirs.platforms.join(", ")}</strong>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-400">Spatial Resolution</span>
-              <strong className="text-slate-800">{comparison.viirs.spatial_resolution}</strong>
+            <div className="flex justify-between py-1 border-b border-[#E2DEC9]/60">
+              <span>Spatial Resolution</span>
+              <strong className="text-[#10243A]">{comparison.viirs.spatial_resolution}</strong>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-400">Detection Threshold</span>
-              <strong className="text-slate-800">{comparison.viirs.detection_threshold}</strong>
+            <div className="flex justify-between py-1 border-b border-[#E2DEC9]/60">
+              <span>Detection Threshold</span>
+              <strong className="text-[#10243A]">{comparison.viirs.detection_threshold}</strong>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-400">Total Detections</span>
-              <strong className="text-2xl text-[#FF9F43] font-extrabold">{comparison.viirs.total_period_detections}</strong>
+            <div className="flex justify-between items-baseline pt-1">
+              <span>Total Detections</span>
+              <strong className="text-2xl text-[#FF6B2B] font-extrabold">
+                {comparison.viirs.total_period_detections}
+              </strong>
             </div>
           </div>
 
-          <div className="p-3 bg-orange-50/50 rounded-xl text-[11px] text-orange-950 leading-relaxed">
-            Detects ~5x more hotspots in this cell. 375 m channels capture smaller perimeter fires and cool night-time residual heat.
+          <div className="p-3 bg-[#F7F6EF] border border-[#E2DEC9] rounded-xl text-[11px] text-[#4A607A] leading-relaxed">
+            Detects ~5× more hotspots in this cell. 375 m channels capture smaller perimeter fires and cool nighttime residual heat.
           </div>
         </div>
 
-        {/* Column 3: FireDNA Harmonized */}
-        <div className="rounded-3xl bg-white border-2 border-[#2D8A64]/40 p-6 shadow-sm space-y-4 relative overflow-hidden">
-          <div className="flex items-center justify-between">
+        {/* Column 3: FireDNA Harmonized (30% Navy Structural Card) */}
+        <div className="rounded-2xl bg-[#10243A] text-[#F7F6EF] p-6 shadow-md space-y-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
             <div className="flex items-center space-x-2">
-              <span className="w-3.5 h-3.5 rounded-full bg-[#2D8A64]"></span>
-              <h2 className="font-bold text-lg text-[#10243A]">FireDNA Harmonized</h2>
+              <span className="w-3 h-3 rounded-full bg-[#FF9F43]"></span>
+              <h2 className="font-extrabold text-lg text-white">FireDNA Harmonized</h2>
             </div>
-            <span className="text-[10px] font-semibold bg-emerald-50 text-[#2D8A64] px-2 py-0.5 rounded-full">
-              Unified Standard
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-[#FF6B2B] text-white px-2 py-0.5 rounded-md">
+              Unified Grid
             </span>
           </div>
 
-          <div className="space-y-2 text-xs text-slate-600">
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-400">Grid Cell ID</span>
-              <strong className="text-slate-800 font-mono text-[11px]">{comparison.grid_cell_id}</strong>
+          <div className="space-y-2.5 text-xs text-[#F7F6EF]/75">
+            <div className="flex justify-between py-1 border-b border-white/10">
+              <span>Grid Cell ID</span>
+              <strong className="text-white font-mono text-[11px]">{comparison.grid_cell_id}</strong>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-400">Grid Resolution</span>
-              <strong className="text-slate-800">{comparison.harmonized.grid_resolution_deg}° (~11 km)</strong>
+            <div className="flex justify-between py-1 border-b border-white/10">
+              <span>Grid Resolution</span>
+              <strong className="text-white">{comparison.harmonized.grid_resolution_deg}° (~11 km)</strong>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-400">Temporal Window</span>
-              <strong className="text-slate-800">{comparison.harmonized.temporal_window_hours}h UTC Day</strong>
+            <div className="flex justify-between py-1 border-b border-white/10">
+              <span>Temporal Window</span>
+              <strong className="text-white">{comparison.harmonized.temporal_window_hours}h UTC Day</strong>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-400">Latest HAI Score</span>
-              <strong className="text-2xl text-[#2D8A64] font-extrabold">
+            <div className="flex justify-between items-baseline pt-1">
+              <span>Latest HAI Score</span>
+              <strong className="text-2xl text-[#FF9F43] font-extrabold">
                 {comparison.harmonized.hai_scores[comparison.harmonized.hai_scores.length - 1].toFixed(2)}
               </strong>
             </div>
           </div>
 
-          <div className="p-3 bg-emerald-50/50 rounded-xl text-[11px] text-emerald-950 leading-relaxed">
+          <div className="p-3 bg-white/5 border border-white/10 rounded-xl text-[11px] text-[#F7F6EF]/80 leading-relaxed">
             Composite index balancing count (40%), log-scaled maximum FRP (45%), and confidence (15%) for fair cross-sensor comparison.
           </div>
         </div>
       </div>
 
       {/* Synchronized Recharts Visualization */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+      <div className="bg-[#FCFBF7] p-6 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h3 className="text-lg font-bold text-[#10243A]">Side-by-Side Observation Timeline</h3>
-            <p className="text-xs text-slate-500">Comparing MODIS and VIIRS raw counts with the FireDNA Harmonized Activity Index (HAI)</p>
+            <h3 className="text-lg font-extrabold text-[#10243A]">
+              Side-by-Side Observation Timeline
+            </h3>
+            <p className="text-xs text-[#4A607A]">
+              Comparing MODIS and VIIRS raw counts with the FireDNA Harmonized Activity Index (HAI)
+            </p>
           </div>
-          <div className="flex items-center space-x-3 text-xs">
-            <span className="flex items-center space-x-1"><span className="w-3 h-3 bg-[#E85D5D] rounded-sm"></span><span>MODIS</span></span>
-            <span className="flex items-center space-x-1"><span className="w-3 h-3 bg-[#FF9F43] rounded-sm"></span><span>VIIRS</span></span>
-            <span className="flex items-center space-x-1"><span className="w-3 h-3 bg-[#2D8A64] rounded-sm"></span><span>Harmonized HAI</span></span>
+          <div className="flex items-center space-x-4 text-xs font-semibold text-[#10243A]">
+            <span className="flex items-center space-x-1.5">
+              <span className="w-3 h-3 bg-[#E85D5D] rounded-sm"></span>
+              <span>MODIS</span>
+            </span>
+            <span className="flex items-center space-x-1.5">
+              <span className="w-3 h-3 bg-[#FF6B2B] rounded-sm"></span>
+              <span>VIIRS</span>
+            </span>
+            <span className="flex items-center space-x-1.5">
+              <span className="w-3 h-3 bg-[#10243A] rounded-sm"></span>
+              <span>Harmonized HAI</span>
+            </span>
           </div>
         </div>
 
@@ -192,4 +207,3 @@ export default async function ComparePage() {
     </div>
   );
 }
-

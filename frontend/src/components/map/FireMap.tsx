@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { GeoJSONFeatureCollection, HarmonizedCell } from "@/lib/types";
-import { Layers, Eye, EyeOff, Info, Flame, ShieldAlert } from "lucide-react";
+import { Layers, Info, Flame, Compass, RefreshCw } from "lucide-react";
 
 interface FireMapProps {
   hotspotsData: GeoJSONFeatureCollection;
@@ -17,7 +17,7 @@ interface FireMapProps {
 export default function FireMap({
   hotspotsData,
   harmonizedCells = [],
-  initialLat = 23.6850,
+  initialLat = 23.685,
   initialLon = 90.3563,
   initialZoom = 7,
 }: FireMapProps) {
@@ -32,35 +32,55 @@ export default function FireMap({
   const [showGrid, setShowGrid] = useState(true);
   const [selectedHotspot, setSelectedHotspot] = useState<any | null>(null);
 
-  // Initialize Map
+  // Initialize Map safely and force invalidateSize
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
     const map = L.map(mapContainerRef.current, {
       center: [initialLat, initialLon],
       zoom: initialZoom,
-      zoomControl: true,
+      zoomControl: false,
       minZoom: 4,
-      maxZoom: 14,
+      maxZoom: 16,
     });
 
-    // Base CartoDB Positron Tiles (High clarity light tiles)
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-      attribution: '&copy; <a href="https://carto.com/">CARTO</a>, NASA FIRMS',
-      maxZoom: 19,
-    }).addTo(map);
+    L.control.zoom({ position: "bottomright" }).addTo(map);
+
+    // Primary CartoDB Voyager Tiles with automatic OpenStreetMap fallback
+    const tileLayer = L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+      {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a> • NASA FIRMS',
+        maxZoom: 19,
+      }
+    );
+
+    tileLayer.on("tileerror", () => {
+      // Fallback to standard OpenStreetMap if Carto CDN is blocked
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+      }).addTo(map);
+    });
+
+    tileLayer.addTo(map);
 
     // Create Layer Groups
+    const gridGroup = L.layerGroup().addTo(map);
     const modisGroup = L.layerGroup().addTo(map);
     const viirsGroup = L.layerGroup().addTo(map);
-    const gridGroup = L.layerGroup().addTo(map);
 
+    gridLayerRef.current = gridGroup;
     modisLayerRef.current = modisGroup;
     viirsLayerRef.current = viirsGroup;
-    gridLayerRef.current = gridGroup;
     mapInstanceRef.current = map;
 
+    // Force Leaflet to recalculate container dimensions after layout paint
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 200);
+
     return () => {
+      clearTimeout(timer);
       map.remove();
       mapInstanceRef.current = null;
     };
@@ -68,14 +88,14 @@ export default function FireMap({
 
   // Update Layers when data or toggles change
   useEffect(() => {
-    if (!mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
+    if (!map) return;
 
-    // Clear existing layers
     modisLayerRef.current?.clearLayers();
     viirsLayerRef.current?.clearLayers();
     gridLayerRef.current?.clearLayers();
 
-    // 1. Render Harmonized Grid Cells
+    // 1. Render Harmonized 0.1° Grid Cells
     if (showGrid && gridLayerRef.current && harmonizedCells.length > 0) {
       harmonizedCells.forEach((cell) => {
         const bounds: L.LatLngBoundsExpression = [
@@ -83,30 +103,36 @@ export default function FireMap({
           [cell.cell_lat_max, cell.cell_lon_max],
         ];
 
-        // Color scale based on HAI score
-        let fillColor = "#2D8A64"; // green (low)
-        if (cell.hai_score > 0.70) fillColor = "#E85D5D"; // red
-        else if (cell.hai_score > 0.45) fillColor = "#FF9F43"; // orange
-        else if (cell.hai_score > 0.20) fillColor = "#67B7E1"; // blue
+        const score = cell.hai_score ?? 0;
+        // Strict 60/30/10 palette for cells: Navy for low, Amber for moderate, Fire-Orange/Red for high
+        let strokeColor = "#10243A";
+        let fillColor = "#10243A";
+        if (score > 0.65) {
+          strokeColor = "#E85D5D";
+          fillColor = "#FF6B2B";
+        } else if (score > 0.35) {
+          strokeColor = "#FF9F43";
+          fillColor = "#FF9F43";
+        }
 
         const polygon = L.rectangle(bounds, {
-          color: fillColor,
-          weight: 1.2,
-          opacity: 0.8,
+          color: strokeColor,
+          weight: 1.5,
+          opacity: 0.85,
           fillColor: fillColor,
-          fillOpacity: 0.25,
+          fillOpacity: 0.22,
         });
 
         const popupContent = `
-          <div style="font-family: sans-serif; font-size: 12px; line-height: 1.5; min-width: 180px;">
-            <div style="font-weight: bold; color: #10243A; margin-bottom: 4px; border-bottom: 1px solid #E2E8F0; padding-bottom: 3px;">
+          <div style="font-family: inherit; font-size: 12px; line-height: 1.5; min-width: 195px; padding: 4px; color: #10243A;">
+            <div style="font-weight: 800; color: #10243A; margin-bottom: 6px; border-bottom: 1px solid #E2DEC9; padding-bottom: 4px;">
               Harmonized Grid Cell (0.1°)
             </div>
-            <div><strong>Cell ID:</strong> ${cell.grid_cell_id}</div>
-            <div><strong>HAI Score:</strong> <span style="font-weight: bold; color: ${fillColor}">${cell.hai_score.toFixed(3)}</span> <small>(Experimental)</small></div>
-            <div><strong>MODIS Detections:</strong> ${cell.modis_count}</div>
-            <div><strong>VIIRS Detections:</strong> ${cell.total_viirs_count}</div>
-            <div><strong>Total FRP:</strong> ${(cell.total_frp_modis + cell.total_frp_viirs).toFixed(1)} MW</div>
+            <div><strong>Cell ID:</strong> <span style="font-family: monospace;">${cell.grid_cell_id}</span></div>
+            <div><strong>HAI Score:</strong> <span style="font-weight: 800; color: #FF6B2B;">${score.toFixed(3)}</span> <small>(Prototype)</small></div>
+            <div><strong>MODIS (~1 km):</strong> ${cell.modis_count} detections</div>
+            <div><strong>VIIRS (375 m):</strong> ${cell.total_viirs_count} detections</div>
+            <div><strong>Combined FRP:</strong> ${(cell.total_frp_modis + cell.total_frp_viirs).toFixed(1)} MW</div>
           </div>
         `;
         polygon.bindPopup(popupContent);
@@ -124,36 +150,36 @@ export default function FireMap({
         if (isModis && !showModis) return;
         if (!isModis && !showViirs) return;
 
-        // Visual distinction between MODIS (~1km) and VIIRS (375m)
-        const radius = isModis ? 7 : 5;
-        const color = isModis ? "#E85D5D" : "#FF9F43";
-        const strokeColor = isModis ? "#8B0000" : "#B35A00";
+        // Visual distinction between MODIS (~1km, Navy/Crimson) and VIIRS (375m, Fire Orange)
+        const radius = isModis ? 8 : 5.5;
+        const fillColor = isModis ? "#E85D5D" : "#FF6B2B";
+        const borderColor = "#10243A";
 
         const marker = L.circleMarker([lat, lon], {
           radius: radius,
-          fillColor: color,
-          color: strokeColor,
+          fillColor: fillColor,
+          color: borderColor,
           weight: 1.5,
-          opacity: 0.9,
-          fillOpacity: 0.75,
+          opacity: 1,
+          fillOpacity: 0.88,
         });
 
         const popupHtml = `
-          <div style="font-family: sans-serif; font-size: 12px; line-height: 1.5; min-width: 200px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; border-bottom: 1px solid #E2E8F0; padding-bottom: 4px;">
-              <strong style="color: ${isModis ? '#E85D5D' : '#FF9F43'}; font-size: 13px;">
-                ${p.instrument} (${p.satellite_platform})
+          <div style="font-family: inherit; font-size: 12px; line-height: 1.5; min-width: 210px; padding: 4px; color: #10243A;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid #E2DEC9; padding-bottom: 4px;">
+              <strong style="color: #10243A; font-size: 13px;">
+                ${p.instrument} · ${p.satellite_platform}
               </strong>
-              <span style="font-size: 10px; background: #F1F5F9; padding: 2px 5px; border-radius: 4px; font-weight: 600;">
-                ${p.confidence_category || 'nominal'}
+              <span style="font-size: 10px; background: #10243A; color: #F7F6EF; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+                ${p.confidence_category || "nominal"}
               </span>
             </div>
             <div><strong>Coordinates:</strong> ${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E</div>
-            <div><strong>Obs Date:</strong> ${p.acq_date} ${p.acq_time ? p.acq_time : ''}</div>
-            <div><strong>Fire Radiative Power:</strong> ${p.frp ? p.frp + ' MW' : 'N/A'}</div>
-            <div><strong>Brightness Temp:</strong> ${p.brightness ? p.brightness + ' K' : 'N/A'}</div>
-            <div style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed #CBD5E1; font-size: 11px; color: #475569;">
-              ℹ️ <strong>Hotspot:</strong> A thermal anomaly detected by infrared sensors, not a confirmed wildfire.
+            <div><strong>Observed:</strong> ${p.acq_date} ${p.acq_time ? p.acq_time + " UTC" : ""}</div>
+            <div><strong>Radiative Power (FRP):</strong> <strong style="color: #FF6B2B;">${p.frp ? p.frp + " MW" : "N/A"}</strong></div>
+            <div><strong>Brightness Temp:</strong> ${p.brightness ? p.brightness + " K" : "N/A"}</div>
+            <div style="margin-top: 6px; padding-top: 5px; border-top: 1px solid #E2DEC9; font-size: 11px; color: #4A607A;">
+              Thermal anomaly detected by NASA FIRMS infrared sensors.
             </div>
           </div>
         `;
@@ -170,83 +196,113 @@ export default function FireMap({
     }
   }, [hotspotsData, harmonizedCells, showModis, showViirs, showGrid]);
 
-  return (
-    <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-lg border border-slate-300 bg-slate-100 flex flex-col">
-      {/* Map Element */}
-      <div ref={mapContainerRef} className="w-full h-full min-h-[500px] z-10" />
+  function handleResetView() {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.setView([initialLat, initialLon], initialZoom);
+      mapInstanceRef.current.invalidateSize();
+    }
+  }
 
-      {/* Floating Layer Controls */}
-      <div className="absolute top-4 right-4 z-20 bg-white/95 backdrop-blur-sm p-3.5 rounded-xl shadow-md border border-slate-200 text-xs text-[#10243A] space-y-2.5 max-w-[220px]">
-        <div className="flex items-center space-x-1.5 font-bold text-slate-800 border-b border-slate-100 pb-1.5">
-          <Layers className="w-4 h-4 text-[#2D8A64]" />
-          <span>Map Layer Toggles</span>
+  const totalPoints = hotspotsData?.features?.length || 0;
+
+  return (
+    <div className="relative w-full h-[600px] rounded-2xl overflow-hidden border border-[#E2DEC9] bg-[#EFECE1] shadow-sm">
+      {/* Explicit height on map container guarantees Leaflet renders immediately */}
+      <div
+        ref={mapContainerRef}
+        style={{ width: "100%", height: "600px" }}
+        className="z-10"
+      />
+
+      {/* Top-Left Status Badge */}
+      <div className="absolute top-4 left-4 z-20 flex items-center gap-2 rounded-xl border border-[#E2DEC9] bg-[#FCFBF7]/95 px-3.5 py-2 text-xs font-semibold text-[#10243A] shadow-sm backdrop-blur-md">
+        <span className="h-2 w-2 rounded-full bg-[#FF6B2B]" />
+        <span>{totalPoints} Active Hotspots</span>
+        <span className="text-[#E2DEC9]">|</span>
+        <span>{harmonizedCells.length} Grid Cells</span>
+      </div>
+
+      {/* Top-Right Layer Controls */}
+      <div className="absolute top-4 right-4 z-20 w-56 rounded-2xl border border-[#E2DEC9] bg-[#FCFBF7]/95 p-4 text-xs text-[#10243A] shadow-md backdrop-blur-md space-y-3">
+        <div className="flex items-center justify-between border-b border-[#E2DEC9] pb-2">
+          <div className="flex items-center gap-1.5 font-bold text-[#10243A]">
+            <Layers className="w-4 h-4 text-[#FF6B2B]" />
+            <span>Satellite Layers</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleResetView}
+            title="Reset map view to Bangladesh"
+            className="rounded-lg border border-[#E2DEC9] bg-[#F7F6EF] p-1 text-[#10243A] hover:bg-[#10243A] hover:text-white transition-colors"
+          >
+            <Compass className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         {/* MODIS Toggle */}
-        <label className="flex items-center justify-between cursor-pointer group">
+        <label className="flex items-center justify-between cursor-pointer">
           <div className="flex items-center space-x-2">
-            <span className="w-3.5 h-3.5 rounded-full bg-[#E85D5D] border border-red-700"></span>
-            <span className="font-medium text-slate-700">MODIS (~1 km)</span>
+            <span className="w-3.5 h-3.5 rounded-full bg-[#E85D5D] border border-[#10243A]"></span>
+            <span className="font-semibold text-[#10243A]">MODIS (~1 km)</span>
           </div>
           <input
             type="checkbox"
             checked={showModis}
             onChange={(e) => setShowModis(e.target.checked)}
-            className="rounded text-[#E85D5D] focus:ring-0 cursor-pointer"
+            className="h-4 w-4 rounded accent-[#10243A] cursor-pointer"
           />
         </label>
 
         {/* VIIRS Toggle */}
-        <label className="flex items-center justify-between cursor-pointer group">
+        <label className="flex items-center justify-between cursor-pointer">
           <div className="flex items-center space-x-2">
-            <span className="w-3.5 h-3.5 rounded-full bg-[#FF9F43] border border-amber-600"></span>
-            <span className="font-medium text-slate-700">VIIRS (375 m)</span>
+            <span className="w-3.5 h-3.5 rounded-full bg-[#FF6B2B] border border-[#10243A]"></span>
+            <span className="font-semibold text-[#10243A]">VIIRS (375 m)</span>
           </div>
           <input
             type="checkbox"
             checked={showViirs}
             onChange={(e) => setShowViirs(e.target.checked)}
-            className="rounded text-[#FF9F43] focus:ring-0 cursor-pointer"
+            className="h-4 w-4 rounded accent-[#10243A] cursor-pointer"
           />
         </label>
 
         {/* Harmonized Grid Toggle */}
-        <label className="flex items-center justify-between cursor-pointer group">
+        <label className="flex items-center justify-between cursor-pointer">
           <div className="flex items-center space-x-2">
-            <span className="w-3.5 h-3.5 border border-[#2D8A64] bg-[#2D8A64]/30 rounded-sm"></span>
-            <span className="font-medium text-slate-700">Harmonized 0.1°</span>
+            <span className="w-3.5 h-3.5 border border-[#10243A] bg-[#FF6B2B]/25 rounded-sm"></span>
+            <span className="font-semibold text-[#10243A]">0.1° HAI Grid</span>
           </div>
           <input
             type="checkbox"
             checked={showGrid}
             onChange={(e) => setShowGrid(e.target.checked)}
-            className="rounded text-[#2D8A64] focus:ring-0 cursor-pointer"
+            className="h-4 w-4 rounded accent-[#10243A] cursor-pointer"
           />
         </label>
       </div>
 
-      {/* Floating Map Legend (Bottom Left) */}
-      <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow-md border border-slate-200 text-[11px] text-[#10243A] space-y-1.5 hidden sm:block">
-        <div className="font-semibold text-slate-700 flex items-center space-x-1">
-          <Info className="w-3 h-3 text-[#67B7E1]" />
-          <span>Fire Intensity (FRP) & HAI Index</span>
+      {/* Bottom-Left Minimal Legend */}
+      <div className="absolute bottom-4 left-4 z-20 rounded-xl border border-[#E2DEC9] bg-[#FCFBF7]/95 p-3 text-[11px] text-[#10243A] shadow-sm backdrop-blur-md space-y-1.5 hidden sm:block">
+        <div className="font-bold text-[#10243A] flex items-center space-x-1.5">
+          <Info className="w-3.5 h-3.5 text-[#FF6B2B]" />
+          <span>Harmonized Activity Index (HAI)</span>
         </div>
-        <div className="flex items-center space-x-4 pt-1">
-          <div className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#2D8A64]"></span>
-            <span>Low HAI (&lt;0.3)</span>
+        <div className="flex items-center space-x-4 pt-0.5 text-[#4A607A] font-medium">
+          <div className="flex items-center space-x-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#10243A]"></span>
+            <span>Low (&lt;0.35)</span>
           </div>
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-[#FF9F43]"></span>
-            <span>Moderate (0.3-0.7)</span>
+            <span>Moderate (0.35–0.65)</span>
           </div>
-          <div className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#E85D5D]"></span>
-            <span>High (&gt;0.7)</span>
+          <div className="flex items-center space-x-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B2B]"></span>
+            <span>High (&gt;0.65)</span>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

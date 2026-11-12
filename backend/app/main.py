@@ -29,6 +29,19 @@ async def lifespan(app: FastAPI):
     """Application lifespan: initialize database tables and seed baseline demo data if empty."""
     logger.info("Initializing FireDNA Database...")
     init_db()
+    # Auto-seed database if empty so frontend never sees empty state
+    from app.core.database import SessionLocal
+    from app.models.models import SatelliteObservation
+    db = SessionLocal()
+    try:
+        if db.query(SatelliteObservation).count() == 0:
+            logger.info("Database is empty. Auto-seeding initial satellite observations & harmonized cells...")
+            from app.utils.seed_demo_data import seed_database
+            await seed_database()
+    except Exception as exc:
+        logger.warning("Auto-seed check failed: %s", exc)
+    finally:
+        db.close()
     logger.info("Database initialized successfully.")
     yield
     logger.info("FireDNA API shutting down.")
