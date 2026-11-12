@@ -32,34 +32,37 @@ export default function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#E2DEC9] bg-[#F7F6EF]/90 text-[#10243A] backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-[#E2DEC9] bg-[#F7F6EF]/95 text-[#10243A] backdrop-blur-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between gap-4">
+        <div className="flex h-16 items-center justify-between gap-2 sm:gap-4">
           {/* Brand Logo */}
           <Link
             href="/"
-            className="group flex items-center gap-3 focus-visible:outline-none"
+            className="group flex shrink-0 items-center gap-2.5 focus-visible:outline-none"
           >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#10243A] text-white shadow-sm transition-transform duration-200 group-hover:scale-105">
               <Flame className="h-5 w-5 text-[#FF6B2B]" />
             </span>
             <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-extrabold tracking-tight text-[#10243A]">
+              <div className="flex items-center gap-1.5">
+                <span className="text-base sm:text-lg font-extrabold tracking-tight text-[#10243A]">
                   Fire<span className="text-[#FF6B2B]">DNA</span>
                 </span>
-                <span className="rounded-md bg-[#10243A]/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#10243A]">
+                <span className="rounded-md bg-[#10243A]/10 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#10243A]">
                   NASA 2026
                 </span>
               </div>
-              <span className="hidden text-[10px] font-medium text-[#4A607A] sm:block">
+              <span className="hidden text-[10px] font-medium text-[#4A607A] xl:block">
                 Understand Fire · Connect Data
               </span>
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav aria-label="Main navigation" className="hidden items-center gap-1 xl:flex">
+          {/* Laptop & Desktop Navigation (Visible from lg: 1024px upwards) */}
+          <nav
+            aria-label="Main navigation"
+            className="hidden items-center gap-0.5 lg:flex xl:gap-1"
+          >
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = isActiveRoute(item.href);
@@ -68,7 +71,7 @@ export default function Navbar() {
                   key={item.href}
                   href={item.href}
                   aria-current={isActive ? "page" : undefined}
-                  className={`relative inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-150 ${
+                  className={`relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-2.5 py-2 text-xs font-semibold transition-all duration-150 xl:px-3 ${
                     isActive
                       ? "bg-[#10243A] text-[#F7F6EF] shadow-sm"
                       : "text-[#10243A]/75 hover:bg-[#10243A]/5 hover:text-[#10243A]"
@@ -85,18 +88,19 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Region Pill & Mobile Menu Button */}
-          <div className="flex items-center gap-2.5">
-            <div className="hidden items-center gap-2 rounded-full border border-[#E2DEC9] bg-[#FCFBF7] px-3 py-1.5 text-xs font-medium text-[#10243A] sm:flex">
-              <span className="h-2 w-2 rounded-full bg-[#FF6B2B]" />
-              <span>Bangladesh &amp; S. Asia</span>
+          {/* Region Pill & Mobile/Tablet Menu Button */}
+          <div className="flex shrink-0 items-center gap-2">
+            <div className="hidden items-center gap-1.5 rounded-full border border-[#E2DEC9] bg-[#FCFBF7] px-2.5 py-1.5 text-[11px] font-medium text-[#10243A] sm:flex xl:px-3 xl:text-xs">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-[#FF6B2B]" />
+              <span className="whitespace-nowrap">Bangladesh &amp; S. Asia</span>
             </div>
 
             <button
               type="button"
               onClick={() => setMobileOpen((open) => !open)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#E2DEC9] bg-[#FCFBF7] text-[#10243A] hover:bg-[#10243A] hover:text-white xl:hidden transition-colors"
-              aria-label="Toggle menu"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#E2DEC9] bg-[#FCFBF7] text-[#10243A] transition-colors hover:bg-[#10243A] hover:text-white lg:hidden"
+              aria-label="Toggle navigation menu"
+              aria-expanded={mobileOpen}
             >
               {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
@@ -104,29 +108,43 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile & Tablet Drawer (< 1024px) */}
       {mobileOpen && (
-        <nav className="border-t border-[#E2DEC9] bg-[#FCFBF7] px-4 py-4 shadow-lg xl:hidden">
-          <div className="grid grid-cols-2 gap-2">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const isActive = isActiveRoute(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-colors ${
-                    isActive
-                      ? "border-[#10243A] bg-[#10243A] text-white"
-                      : "border-[#E2DEC9] bg-[#F7F6EF]/60 text-[#10243A] hover:border-[#10243A]/30"
-                  }`}
-                >
-                  <Icon className={`h-4 w-4 ${isActive ? "text-[#FF6B2B]" : "text-[#10243A]/70"}`} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+        <nav className="border-t border-[#E2DEC9] bg-[#FCFBF7] px-4 py-4 shadow-lg lg:hidden">
+          <div className="mx-auto max-w-7xl space-y-3">
+            <div className="flex items-center justify-between rounded-xl border border-[#E2DEC9] bg-[#F7F6EF] px-3 py-2 text-xs font-medium text-[#10243A] sm:hidden">
+              <span>Active Demonstration Region</span>
+              <span className="inline-flex items-center gap-1.5 font-bold">
+                <span className="h-2 w-2 rounded-full bg-[#FF6B2B]" />
+                Bangladesh &amp; S. Asia
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {NAV_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isActive = isActiveRoute(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-colors ${
+                      isActive
+                        ? "border-[#10243A] bg-[#10243A] text-white"
+                        : "border-[#E2DEC9] bg-[#F7F6EF]/60 text-[#10243A] hover:border-[#10243A]/30"
+                    }`}
+                  >
+                    <Icon
+                      className={`h-4 w-4 shrink-0 ${
+                        isActive ? "text-[#FF6B2B]" : "text-[#10243A]/70"
+                      }`}
+                    />
+                    <span className="truncate">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </nav>
       )}

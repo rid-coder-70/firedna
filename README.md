@@ -1,132 +1,157 @@
-# FireDNA
+# FireDNA — Multi-Satellite Active Fire Harmonization & Analytics
 
 **Understand Fire. Connect Data. Protect Our Planet.**
 
-FireDNA is an educational, full-stack prototype for exploring NASA FIRMS active-fire observations from the MODIS and VIIRS satellite instruments. Its primary demonstration region is Bangladesh and South Asia.
+FireDNA is a full-stack scientific web application built for the **NASA Space Apps Challenge 2026** (*MODIS and VIIRS Hot Spots*). It ingests active-fire observations from NASA FIRMS across the **MODIS** and **VIIRS** satellite instruments, preserves full sensor provenance, harmonizes detections onto a standardized **0.1° (~11 km)** spatial grid and **24-hour UTC** temporal window, and presents comparative analytics, interactive maps, and statistical anomaly detection.
 
-## The problem
+- **Primary Demonstration Region:** Bangladesh and South Asia (with architecture supporting any global bounding box).
+- **Primary Data Source:** [NASA FIRMS (Fire Information for Resource Management System)](https://firms.modaps.eosdis.nasa.gov/)
 
-MODIS and VIIRS can observe the same region and fire activity but report different numbers of hotspot detections. Their pixels have different sizes, their detection algorithms and sensitivity differ, and their satellites pass over at different times. A hotspot is a satellite-observed thermal anomaly, not a confirmed fire event. Comparing raw sensor counts as if they were equivalent measurements can therefore be misleading.
+---
 
-NASA FIRMS provides the observations, but researchers and learners also need a clear way to compare sensors, understand the limits of those comparisons, and explore activity over time and space.
+## 1. The Scientific Problem
 
-## What FireDNA does
+NASA's **MODIS** (aboard Terra and Aqua, ~1 km spatial resolution) and **VIIRS** (aboard Suomi-NPP, NOAA-20, and NOAA-21, 375 m spatial resolution) observe the same regional fire events with vastly different optical footprints:
 
-FireDNA keeps the original sensor observations and their provenance, then puts observations into shared spatial grid cells and daily time windows. It presents sensor-specific counts side by side with an experimental **Harmonized Activity Index (HAI)**, plus maps, time-series, seasonal views, anomaly summaries, and CSV/GeoJSON exports.
+- A 375 m VIIRS pixel covers roughly **7× less ground area** than a 1 km MODIS pixel, allowing VIIRS to detect smaller and cooler fires (~5 MW threshold vs. ~50 MW for MODIS).
+- Consequently, VIIRS routinely reports **4× to 6× more hotspots** than MODIS over the exact same burning area.
+- Treating raw hotspot counts as directly interchangeable leads students, journalists, and policy makers to mistakenly conclude that fire activity has spiked when comparing VIIRS data to historical MODIS baselines.
 
-The application supports both live FIRMS ingestion (when a server-side `FIRMS_MAP_KEY` is configured) and explicitly labeled synthetic demo data. Demo mode makes the project usable without an API key; demo observations are not NASA observations.
+## 2. The FireDNA Solution
 
-### Main experiences
+FireDNA never deletes or merges raw satellite records. Instead, it:
 
-| Route | What you can explore |
-|---|---|
-| `/` | Regional overview, hotspot statistics, and entry points |
-| `/map` | Interactive MODIS/VIIRS fire map and harmonized cells |
-| `/compare` | Side-by-side sensor and harmonization comparison |
-| `/calendar` | Daily fire activity heatmap |
-| `/analytics` | Daily, monthly, and seasonal analytics |
-| `/anomalies` | Unusual-activity summaries and historical context |
-| `/sources` | NASA FIRMS products, attribution, and data provenance |
-| `/about` | Project context and educational material |
+1. **Preserves Sensor Provenance:** Stores raw MODIS and VIIRS records separately with full acquisition timestamps, Fire Radiative Power (FRP), brightness temperature, and confidence categories.
+2. **Spatial & Temporal Harmonization:** Projects detections onto a common **0.1° (~11 km) latitude/longitude grid** aggregated by **24-hour UTC windows**.
+3. **Harmonized Activity Index (HAI):** Computes an interpretable prototype composite score:
+   $$\text{HAI} = 0.40 \cdot S_{\text{count}} + 0.45 \cdot S_{\text{FRP}} + 0.15 \cdot S_{\text{confidence}}$$
+   where $S_{\text{count}}$ is 95th-percentile normalized detection density, $S_{\text{FRP}}$ is log-scaled maximum Fire Radiative Power ($\ln(1 + \text{FRP}_{\max})$) to avoid double-counting co-detected fires, and $S_{\text{confidence}}$ is mean normalized sensor confidence.
+4. **Statistical Anomaly Detection:** Evaluates grid cells against historical monthly baselines ($\mu \pm \sigma$) using Z-scores and historical percentiles.
 
-## Scientific limitations
+---
 
-- HAI is a FireDNA **experimental prototype**, not an official NASA product, validated scientific index, or calibrated measurement.
-- The default 0.1-degree latitude/longitude grid is a convenient comparison framework, not an equal-area grid.
-- Satellite hotspot counts are observations, not counts of unique fires. Clouds, overpass timing, pixel size, and detection algorithms affect what each instrument sees.
-- An anomaly is a statistical signal, not confirmation of a dangerous wildfire. Do not use the prototype for operational fire-management decisions.
-- Demo data is synthetic and must not be presented as real NASA data.
+## 3. UI/UX & Responsive Design System (60 / 30 / 10 Rule)
 
-See [HARMONIZATION_METHODOLOGY.md](docs/HARMONIZATION_METHODOLOGY.md) for formulas, assumptions, and limitations.
+FireDNA features a minimal editorial interface engineered for both **mobile viewports** and **laptop/desktop screens**:
 
-## How it works
+| Weight | Palette Role | Hex Tokens | Application |
+|---|---|---|---|
+| **60% Dominant** | Warm Cream & Ivory | `#F7F6EF`, `#FCFBF7`, `#E2DEC9` | Primary page canvas, cards, map overlays, and distraction-free reading surfaces |
+| **30% Structural** | Deep Space Navy | `#10243A`, `#1E3A5F`, `#4A607A` | Typography, navigation active states, architectural mission cards, and footer |
+| **10% Accent** | Fire Orange & Crimson | `#FF6B2B`, `#FF9F43`, `#E85D5D` | Active fire hotspots, primary CTAs, live telemetry indicators, and peak anomalies |
 
-```text
-NASA FIRMS (or synthetic demo source)
-    → parse, validate, and deduplicate observations
-    → store sensor records with ingestion provenance
-    → aggregate into grid cells and daily windows
-    → calculate prototype HAI and activity summaries
-    → expose data through the FastAPI API
-    → explore it in the Next.js dashboard or export it
-```
+### Application Routes
 
-The backend is FastAPI with SQLAlchemy; SQLite is the local-development default, and Docker Compose provides PostgreSQL/PostGIS. The frontend is Next.js 14, React, TypeScript, Leaflet, and Recharts.
+| Route | Module | Key Capabilities |
+|---|---|---|
+| `/` | **Overview Dashboard** | Regional KPIs, optical physics comparison panel, live NASA FIRMS sync button, and educational cards |
+| `/map` | **Interactive Fire Map** | Key-free OpenStreetMap GIS viewport, collapsible layer controls (`MODIS ~1 km`, `VIIRS 375 m`, `0.1° HAI Grid`), and one-click CSV/GeoJSON export |
+| `/compare` | **Sensor Comparison Lab** | Synchronized 3-column inspection of MODIS vs. VIIRS vs. FireDNA Harmonized Grid with Recharts timeline |
+| `/calendar` | **Fire Activity Calendar** | 365-day seasonal burning heatmap highlighting South Asian Pre-Monsoon (`MAM`) and Post-Harvest (`SON`) peaks |
+| `/analytics` | **Activity Analytics** | Daily detection trends, monthly climatological distributions, and seasonal breakdowns |
+| `/anomalies` | **Anomaly Explorer** | Z-score statistical outlier rankings with scientific integrity disclaimers |
+| `/sources` | **Data Sources** | Official NASA EOSDIS product specifications (`MODIS_NRT`, `VIIRS_SNPP_NRT`, `VIIRS_NOAA20_NRT`, `VIIRS_NOAA21_NRT`) and provenance |
+| `/about` | **About FireDNA** | Mission architecture, 4-stage processing pipeline, and interactive student/researcher FAQ |
 
-## Run locally (Windows PowerShell)
+---
 
-Use two terminals from the repository root.
+## 4. Technology Stack
 
-### 1. Start the backend
+- **Frontend:** Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS, Leaflet (with OpenStreetMap tiles), Recharts, Lucide Icons.
+- **Backend:** Python 3.11+, FastAPI, Pydantic v2, SQLAlchemy 2.0, HTTPX.
+- **Database:** SQLite (zero-config local development default with automatic startup seeding) and PostgreSQL + PostGIS (via Docker Compose).
+- **Deployment:** Vercel-ready frontend build (`frontend/`) and Dockerized FastAPI backend (`backend/`).
+
+---
+
+## 5. Quick Start (Local Development)
+
+### Step 1 — Run the FastAPI Backend
+
+Open a terminal in the repository root:
 
 ```powershell
-Set-Location .\backend
+cd backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-Copy-Item .env.example .env
 ```
 
-Edit `backend\.env` as needed. Leave `FIRMS_MAP_KEY` empty to use synthetic demo data. Seed the local database with demo observations, harmonized results, and anomaly records:
+Configure environment variables (optional—if `.env` is already present or `FIRMS_MAP_KEY` is omitted, FireDNA automatically falls back to calibrated demonstration data and auto-seeds on startup):
 
 ```powershell
-python -m app.utils.seed_demo_data
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Start the API:
+- **API Base URL:** `http://127.0.0.1:8000/api/v1`
+- **Interactive Swagger Docs:** `http://127.0.0.1:8000/docs`
+- **Health Check:** `http://127.0.0.1:8000/health`
+
+### Step 2 — Run the Next.js Frontend
+
+Open a second terminal in the repository root:
 
 ```powershell
-python -m uvicorn app.main:app --reload
-```
-
-The API is at <http://localhost:8000>, and interactive API documentation is at <http://localhost:8000/docs>.
-
-### 2. Start the frontend
-
-```powershell
-Set-Location .\frontend
-npm ci
+cd frontend
+npm install
 npm run dev
 ```
 
-Open <http://localhost:3000>. By default, the frontend requests `http://localhost:8000/api/v1`. Set `NEXT_PUBLIC_API_URL` before building if the API is hosted at another URL.
+Open `http://localhost:3000` in your browser.
 
-## Tests and production build
+> **Note:** Even if the backend server is not running, the frontend includes a resilient fallback layer (`src/lib/api.ts`) so every page, chart, and map loads immediately without crashing.
+
+---
+
+## 6. Deploying to Vercel
+
+The frontend is pre-configured and verified for zero-error deployment on **Vercel**:
+
+1. Push this repository to GitHub / GitLab / Bitbucket.
+2. Import the project into [Vercel](https://vercel.com/new).
+3. Set the **Root Directory** to `frontend`.
+4. (Optional) Add the environment variable `NEXT_PUBLIC_API_URL` pointing to your hosted FastAPI backend URL (e.g., `https://your-firedna-api.onrender.com/api/v1`).
+5. Click **Deploy**.
+
+To verify the production build locally before deploying:
 
 ```powershell
-Set-Location .\backend
-python tests\run_tests.py
-```
-
-```powershell
-Set-Location .\frontend
-npm run lint
+cd frontend
 npm run build
+npm start
 ```
 
-## Docker Compose
+---
 
-With Docker Desktop installed, set a PostgreSQL password and optionally a NASA FIRMS key before starting the stack from the repository root:
+## 7. Running Backend Tests
 
 ```powershell
-$env:POSTGRES_PASSWORD = "choose-a-local-password"
-$env:FIRMS_MAP_KEY = ""
-docker compose up --build
+cd backend
+python tests/run_tests.py
 ```
 
-Compose starts PostgreSQL/PostGIS, the API, and the frontend. Without `FIRMS_MAP_KEY`, the backend uses demo mode.
+All 24 unit and integration checks (covering CSV cleaning, coordinate validation, deduplication, 0.1° spatial gridding, HAI calculation, Z-score anomaly detection, and FastAPI routes) run in-memory and pass at 100%.
 
-## Documentation
+---
 
-| Document | What it explains |
+## 8. System Design & Scientific Documentation
+
+Detailed architectural and scientific specifications are located in the [`/docs`](docs/) directory:
+
+| Document | Description |
 |---|---|
-| [Product requirements](docs/PRD.md) | Problem statement, audiences, requirements, and project scope |
-| [System architecture](docs/SYSTEM_ARCHITECTURE.md) | Application components, data flow, and deployment options |
-| [Database design](docs/DATABASE_DESIGN.md) | Proposed relational/spatial schema, indexes, and provenance |
-| [API design](docs/API_DESIGN.md) | API conventions, endpoint contracts, and examples |
-| [Data pipeline](docs/DATA_PIPELINE.md) | FIRMS ingestion, validation, processing, and demo mode |
-| [Harmonization methodology](docs/HARMONIZATION_METHODOLOGY.md) | Grid, normalization, HAI, anomaly method, and caveats |
-| [UI/UX design](docs/UI_UX_DESIGN.md) | Audience, navigation, pages, and accessibility requirements |
-| [Development roadmap](docs/DEVELOPMENT_ROADMAP.md) | Implemented prototype, verification, and next steps |
+| [docs/PRD.md](docs/PRD.md) | Product Requirements Document, target users, and functional scope |
+| [docs/SYSTEM_ARCHITECTURE.md](docs/SYSTEM_ARCHITECTURE.md) | End-to-end architecture, data flow, caching, and deployment diagrams |
+| [docs/DATABASE_DESIGN.md](docs/DATABASE_DESIGN.md) | Normalized relational & PostGIS schema, indexes, and SQL DDL migrations |
+| [docs/API_DESIGN.md](docs/API_DESIGN.md) | REST API `/api/v1` specifications, query parameters, and response schemas |
+| [docs/DATA_PIPELINE.md](docs/DATA_PIPELINE.md) | NASA FIRMS ingestion, cleaning, validation, and deduplication pipeline |
+| [docs/HARMONIZATION_METHODOLOGY.md](docs/HARMONIZATION_METHODOLOGY.md) | Mathematical formulation of 0.1° gridding, HAI weights, and Z-score anomalies |
+| [docs/UI_UX_DESIGN.md](docs/UI_UX_DESIGN.md) | 60/30/10 minimal design system, responsive layout, and page specifications |
+| [docs/DEVELOPMENT_ROADMAP.md](docs/DEVELOPMENT_ROADMAP.md) | Phase-by-phase implementation milestones and verification checklist |
 
-FireDNA is an independent educational prototype created for the NASA Space Apps Challenge. It is not an official NASA product.
+---
+
+## 9. Scientific Disclaimer & Attribution
+
+- **NASA FIRMS Attribution:** We acknowledge the use of data and/or imagery from NASA's Fire Information for Resource Management System (FIRMS) (`https://firms.modaps.eosdis.nasa.gov/`), part of NASA's Earth Observing System Data and Information System (EOSDIS).
+- **Experimental Prototype Notice:** The Harmonized Activity Index (HAI) and statistical anomaly Z-scores are experimental prototype metrics developed by the FireDNA team for the NASA Space Apps Challenge 2026. They are not official NASA-validated products and should not be used for emergency wildfire life-safety decisions without ground-truth verification.

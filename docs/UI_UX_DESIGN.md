@@ -25,25 +25,27 @@ The design balances **scientific credibility** with **educational accessibility*
 
 ---
 
-## 2. Visual Design System
+## 2. Visual Design System (Minimal 60 / 30 / 10 Rule)
 
 ### 2.1 Color Palette
 
-| Token Name | Hex Code | Role & Usage |
-|---|---|---|
-| **Deep Space Navy** | `#10243A` | Primary brand color, headers, sidebar, map background, high-contrast dark surfaces |
-| **Forest Green** | `#2D8A64` | Environmental elements, baseline indicators, safe/normal activity status |
-| **Atmospheric Sky** | `#67B7E1` | Secondary accents, informational badges, links, temporal controls |
-| **Solar Flare Orange**| `#FF9F43` | Moderate thermal anomalies, VIIRS detections, elevated activity warnings |
-| **Danger Flame Red** | `#E85D5D` | High FRP hotspots, severe anomalies, critical indicators |
-| **Parchment Cream**  | `#F7F6EF` | Primary page background, light card surfaces, soft contrast |
-| **Pure White**       | `#FFFFFF` | Card foreground, modals, tooltips, popup backgrounds |
-| **Slate Gray**       | `#64748B` | Secondary text, borders, subtle dividers, muted metadata |
+FireDNA strictly enforces the **60% / 30% / 10%** editorial color rule across all mobile, laptop, and desktop viewports:
+
+| Weight & Role | Token Name | Hex Code | Usage |
+|---|---|---|---|
+| **60% Dominant** | **Parchment Cream** | `#F7F6EF` | Primary page canvas, background, and soft editorial contrast |
+| **60% Dominant** | **Warm Ivory Surface** | `#FCFBF7` | Card surfaces, header bars, map control overlays, and table backgrounds |
+| **60% Dominant** | **Warm Sand Border** | `#E2DEC9` | Subtle structural borders and dividers |
+| **30% Structural** | **Deep Space Navy** | `#10243A` | Primary typography, active navigation pills, mission spec cards, and footer |
+| **30% Structural** | **Muted Slate Navy** | `#4A607A` | Secondary body copy, captions, axis labels, and metadata |
+| **10% Accent** | **Fire Orange** | `#FF6B2B` | Primary CTAs, VIIRS (375 m) hotspots, high HAI cells, and live sync indicators |
+| **10% Accent** | **Solar Amber** | `#FF9F43` | Moderate thermal anomalies and secondary fire badges |
+| **10% Accent** | **Flame Crimson** | `#E85D5D` | MODIS (~1 km) hotspots and extreme statistical anomalies ($Z \ge 3.5$) |
 
 #### Semantic Color Rules
-- **Fire Observations:** Strictly reserved for `#FF9F43` (VIIRS / moderate) and `#E85D5D` (MODIS / high FRP / critical).
-- **Harmonized Activity Index (HAI):** Multi-tier gradient (Green `#2D8A64` → Blue `#67B7E1` → Orange `#FF9F43` → Red `#E85D5D`).
-- **UI Chrome & Text:** Deep Space Navy `#10243A` on Cream `#F7F6EF` for optimal WCAG AA contrast (ratio > 7:1).
+- **Fire Observations:** Strictly reserved for `#FF6B2B` / `#FF9F43` (VIIRS / moderate-to-high activity) and `#E85D5D` (MODIS / extreme anomalies).
+- **Harmonized Activity Index (HAI):** Navy `#10243A` (Low $<0.35$) → Amber `#FF9F43` (Moderate $0.35\text{--}0.65$) → Fire Orange `#FF6B2B` (High $>0.65$).
+- **UI Chrome & Text:** Deep Space Navy `#10243A` on Cream `#F7F6EF` / `#FCFBF7` for optimal WCAG AAA readability.
 
 ### 2.2 Typography
 - **Primary Typeface:** `Inter`, system fallback `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`.

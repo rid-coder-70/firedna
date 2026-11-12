@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { GeoJSONFeatureCollection, HarmonizedCell } from "@/lib/types";
-import { Layers, Info, Compass, Map as MapIcon } from "lucide-react";
+import { Layers, Info, Compass, ChevronDown, ChevronUp } from "lucide-react";
 
 interface FireMapProps {
   hotspotsData: GeoJSONFeatureCollection;
@@ -23,7 +23,6 @@ export default function FireMap({
 }: FireMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
-  const baseTileRef = useRef<L.TileLayer | null>(null);
   const modisLayerRef = useRef<L.LayerGroup | null>(null);
   const viirsLayerRef = useRef<L.LayerGroup | null>(null);
   const gridLayerRef = useRef<L.LayerGroup | null>(null);
@@ -31,7 +30,7 @@ export default function FireMap({
   const [showModis, setShowModis] = useState(true);
   const [showViirs, setShowViirs] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
-  const [baseStyle, setBaseStyle] = useState<"osm" | "terrain">("osm");
+  const [controlsExpanded, setControlsExpanded] = useState(true);
 
   // Initialize Map with 100% Free OpenStreetMap Tiles (No API Key Required)
   useEffect(() => {
@@ -47,15 +46,12 @@ export default function FireMap({
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    const osmLayer = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors • NASA FIRMS',
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> • NASA FIRMS',
       maxZoom: 19,
     }).addTo(map);
 
-    baseTileRef.current = osmLayer;
-
-    // Create Layer Groups
     const gridGroup = L.layerGroup().addTo(map);
     const modisGroup = L.layerGroup().addTo(map);
     const viirsGroup = L.layerGroup().addTo(map);
@@ -69,37 +65,18 @@ export default function FireMap({
       map.invalidateSize();
     }, 200);
 
+    const handleResize = () => {
+      map.invalidateSize();
+    };
+    window.addEventListener("resize", handleResize);
+
     return () => {
       clearTimeout(timer);
+      window.removeEventListener("resize", handleResize);
       map.remove();
       mapInstanceRef.current = null;
     };
   }, [initialLat, initialLon, initialZoom]);
-
-  // Switch Base Map Style (Standard OSM vs Esri World Street/Topo - both 100% free without API keys)
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map || !baseTileRef.current) return;
-
-    map.removeLayer(baseTileRef.current);
-
-    const nextUrl =
-      baseStyle === "osm"
-        ? "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-        : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}";
-
-    const nextAttribution =
-      baseStyle === "osm"
-        ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> • NASA FIRMS'
-        : "Tiles &copy; Esri • NASA FIRMS";
-
-    const nextLayer = L.tileLayer(nextUrl, {
-      attribution: nextAttribution,
-      maxZoom: baseStyle === "osm" ? 19 : 8,
-    }).addTo(map);
-
-    baseTileRef.current = nextLayer;
-  }, [baseStyle]);
 
   // Update Layers when data or toggles change
   useEffect(() => {
@@ -138,7 +115,7 @@ export default function FireMap({
         });
 
         const popupContent = `
-          <div style="font-family: inherit; font-size: 12px; line-height: 1.5; min-width: 195px; padding: 4px; color: #10243A;">
+          <div style="font-family: inherit; font-size: 12px; line-height: 1.5; min-width: 185px; padding: 4px; color: #10243A;">
             <div style="font-weight: 800; color: #10243A; margin-bottom: 6px; border-bottom: 1px solid #E2DEC9; padding-bottom: 4px;">
               Harmonized Grid Cell (0.1°)
             </div>
@@ -178,7 +155,7 @@ export default function FireMap({
         });
 
         const popupHtml = `
-          <div style="font-family: inherit; font-size: 12px; line-height: 1.5; min-width: 210px; padding: 4px; color: #10243A;">
+          <div style="font-family: inherit; font-size: 12px; line-height: 1.5; min-width: 195px; padding: 4px; color: #10243A;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid #E2DEC9; padding-bottom: 4px;">
               <strong style="color: #10243A; font-size: 13px;">
                 ${p.instrument} · ${p.satellite_platform}
@@ -218,29 +195,37 @@ export default function FireMap({
   const totalPoints = hotspotsData?.features?.length || 0;
 
   return (
-    <div className="relative w-full h-[600px] rounded-2xl overflow-hidden border border-[#E2DEC9] bg-[#EFECE1] shadow-sm">
-      {/* Explicit height on map container guarantees Leaflet renders immediately */}
+    <div className="relative w-full h-[460px] sm:h-[540px] lg:h-[620px] rounded-2xl overflow-hidden border border-[#E2DEC9] bg-[#EFECE1] shadow-sm">
+      {/* Map Canvas */}
       <div
         ref={mapContainerRef}
-        style={{ width: "100%", height: "600px" }}
-        className="z-10"
+        className="w-full h-full z-10"
       />
 
       {/* Top-Left Status Badge */}
-      <div className="absolute top-4 left-4 z-20 flex items-center gap-2 rounded-xl border border-[#E2DEC9] bg-[#FCFBF7]/95 px-3.5 py-2 text-xs font-semibold text-[#10243A] shadow-sm backdrop-blur-md">
-        <span className="h-2 w-2 rounded-full bg-[#FF6B2B]" />
-        <span>{totalPoints} Active Hotspots</span>
+      <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 flex items-center gap-1.5 sm:gap-2 rounded-xl border border-[#E2DEC9] bg-[#FCFBF7]/95 px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-[11px] sm:text-xs font-semibold text-[#10243A] shadow-sm backdrop-blur-md">
+        <span className="h-2 w-2 shrink-0 rounded-full bg-[#FF6B2B]" />
+        <span>{totalPoints} Hotspots</span>
         <span className="text-[#E2DEC9]">|</span>
-        <span>{harmonizedCells.length} Grid Cells</span>
+        <span>{harmonizedCells.length} Cells</span>
       </div>
 
-      {/* Top-Right Layer Controls */}
-      <div className="absolute top-4 right-4 z-20 w-56 rounded-2xl border border-[#E2DEC9] bg-[#FCFBF7]/95 p-4 text-xs text-[#10243A] shadow-md backdrop-blur-md space-y-3">
-        <div className="flex items-center justify-between border-b border-[#E2DEC9] pb-2">
-          <div className="flex items-center gap-1.5 font-bold text-[#10243A]">
-            <Layers className="w-4 h-4 text-[#FF6B2B]" />
-            <span>Satellite Layers</span>
-          </div>
+      {/* Top-Right Collapsible Layer Controls (Responsive for Mobile & Laptop) */}
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 w-48 sm:w-56 rounded-2xl border border-[#E2DEC9] bg-[#FCFBF7]/95 p-3 sm:p-4 text-xs text-[#10243A] shadow-md backdrop-blur-md">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setControlsExpanded((prev) => !prev)}
+            className="flex flex-1 items-center gap-1.5 font-bold text-[#10243A] text-left"
+          >
+            <Layers className="w-4 h-4 shrink-0 text-[#FF6B2B]" />
+            <span className="truncate">Satellite Layers</span>
+            {controlsExpanded ? (
+              <ChevronUp className="w-3.5 h-3.5 ml-auto text-[#4A607A]" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5 ml-auto text-[#4A607A]" />
+            )}
+          </button>
           <button
             type="button"
             onClick={handleResetView}
@@ -251,66 +236,70 @@ export default function FireMap({
           </button>
         </div>
 
-        {/* MODIS Toggle */}
-        <label className="flex items-center justify-between cursor-pointer">
-          <div className="flex items-center space-x-2">
-            <span className="w-3.5 h-3.5 rounded-full bg-[#E85D5D] border border-[#10243A]"></span>
-            <span className="font-semibold text-[#10243A]">MODIS (~1 km)</span>
-          </div>
-          <input
-            type="checkbox"
-            checked={showModis}
-            onChange={(e) => setShowModis(e.target.checked)}
-            className="h-4 w-4 rounded accent-[#10243A] cursor-pointer"
-          />
-        </label>
+        {controlsExpanded && (
+          <div className="mt-2.5 pt-2.5 border-t border-[#E2DEC9] space-y-2.5">
+            {/* MODIS Toggle */}
+            <label className="flex items-center justify-between cursor-pointer">
+              <div className="flex items-center space-x-2">
+                <span className="w-3 h-3 rounded-full bg-[#E85D5D] border border-[#10243A]"></span>
+                <span className="font-semibold text-[#10243A]">MODIS (~1 km)</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={showModis}
+                onChange={(e) => setShowModis(e.target.checked)}
+                className="h-4 w-4 rounded accent-[#10243A] cursor-pointer"
+              />
+            </label>
 
-        {/* VIIRS Toggle */}
-        <label className="flex items-center justify-between cursor-pointer">
-          <div className="flex items-center space-x-2">
-            <span className="w-3.5 h-3.5 rounded-full bg-[#FF6B2B] border border-[#10243A]"></span>
-            <span className="font-semibold text-[#10243A]">VIIRS (375 m)</span>
-          </div>
-          <input
-            type="checkbox"
-            checked={showViirs}
-            onChange={(e) => setShowViirs(e.target.checked)}
-            className="h-4 w-4 rounded accent-[#10243A] cursor-pointer"
-          />
-        </label>
+            {/* VIIRS Toggle */}
+            <label className="flex items-center justify-between cursor-pointer">
+              <div className="flex items-center space-x-2">
+                <span className="w-3 h-3 rounded-full bg-[#FF6B2B] border border-[#10243A]"></span>
+                <span className="font-semibold text-[#10243A]">VIIRS (375 m)</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={showViirs}
+                onChange={(e) => setShowViirs(e.target.checked)}
+                className="h-4 w-4 rounded accent-[#10243A] cursor-pointer"
+              />
+            </label>
 
-        {/* Harmonized Grid Toggle */}
-        <label className="flex items-center justify-between cursor-pointer">
-          <div className="flex items-center space-x-2">
-            <span className="w-3.5 h-3.5 border border-[#10243A] bg-[#FF6B2B]/25 rounded-sm"></span>
-            <span className="font-semibold text-[#10243A]">0.1° HAI Grid</span>
+            {/* Harmonized Grid Toggle */}
+            <label className="flex items-center justify-between cursor-pointer">
+              <div className="flex items-center space-x-2">
+                <span className="w-3 h-3 border border-[#10243A] bg-[#FF6B2B]/25 rounded-sm"></span>
+                <span className="font-semibold text-[#10243A]">0.1° HAI Grid</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={showGrid}
+                onChange={(e) => setShowGrid(e.target.checked)}
+                className="h-4 w-4 rounded accent-[#10243A] cursor-pointer"
+              />
+            </label>
           </div>
-          <input
-            type="checkbox"
-            checked={showGrid}
-            onChange={(e) => setShowGrid(e.target.checked)}
-            className="h-4 w-4 rounded accent-[#10243A] cursor-pointer"
-          />
-        </label>
+        )}
       </div>
 
       {/* Bottom-Left Minimal Legend */}
-      <div className="absolute bottom-4 left-4 z-20 rounded-xl border border-[#E2DEC9] bg-[#FCFBF7]/95 p-3 text-[11px] text-[#10243A] shadow-sm backdrop-blur-md space-y-1.5 hidden sm:block">
+      <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 z-20 rounded-xl border border-[#E2DEC9] bg-[#FCFBF7]/95 px-2.5 py-2 sm:p-3 text-[10px] sm:text-[11px] text-[#10243A] shadow-sm backdrop-blur-md space-y-1 max-w-[calc(100%-4rem)]">
         <div className="font-bold text-[#10243A] flex items-center space-x-1.5">
-          <Info className="w-3.5 h-3.5 text-[#FF6B2B]" />
-          <span>Harmonized Activity Index (HAI)</span>
+          <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#FF6B2B] shrink-0" />
+          <span className="truncate">Harmonized Activity Index (HAI)</span>
         </div>
-        <div className="flex items-center space-x-4 pt-0.5 text-[#4A607A] font-medium">
-          <div className="flex items-center space-x-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#10243A]"></span>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-0.5 text-[#4A607A] font-medium">
+          <div className="flex items-center space-x-1">
+            <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#10243A]"></span>
             <span>Low (&lt;0.35)</span>
           </div>
-          <div className="flex items-center space-x-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#FF9F43]"></span>
+          <div className="flex items-center space-x-1">
+            <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#FF9F43]"></span>
             <span>Moderate (0.35–0.65)</span>
           </div>
-          <div className="flex items-center space-x-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B2B]"></span>
+          <div className="flex items-center space-x-1">
+            <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#FF6B2B]"></span>
             <span>High (&gt;0.65)</span>
           </div>
         </div>

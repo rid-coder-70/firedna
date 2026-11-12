@@ -8,7 +8,7 @@ import FirmsSyncButton from "@/components/ui/FirmsSyncButton";
 const FireMap = dynamic(() => import("@/components/map/FireMap"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[600px] bg-[#EFECE1] rounded-2xl flex items-center justify-center border border-[#E2DEC9]">
+    <div className="w-full h-[460px] sm:h-[540px] lg:h-[620px] bg-[#EFECE1] rounded-2xl flex items-center justify-center border border-[#E2DEC9]">
       <div className="flex flex-col items-center space-y-2 text-[#10243A]">
         <Flame className="w-8 h-8 text-[#FF6B2B] animate-bounce" />
         <span className="text-sm font-bold">Initializing NASA Satellite Fire Map...</span>
@@ -22,15 +22,15 @@ export default async function MapPage() {
   const harmonizedCells = await getHarmonizedResults();
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8">
+    <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
       {/* Minimal Header Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-[#FCFBF7] p-6 rounded-2xl border border-[#E2DEC9] shadow-sm">
-        <div>
-          <div className="flex items-center space-x-2.5">
-            <h1 className="text-2xl font-extrabold text-[#10243A]">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-[#FCFBF7] p-5 sm:p-6 rounded-2xl border border-[#E2DEC9] shadow-sm">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#10243A]">
               Interactive Satellite Fire Map
             </h1>
-            <span className="bg-[#FFF2EB] text-[#FF6B2B] border border-[#FF6B2B]/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+            <span className="bg-[#FFF2EB] text-[#FF6B2B] border border-[#FF6B2B]/30 text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
               Live GIS
             </span>
           </div>
@@ -39,8 +39,8 @@ export default async function MapPage() {
           </p>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center flex-wrap gap-2.5">
+        {/* Action Controls - Single clean row on laptop, wraps cleanly on mobile */}
+        <div className="flex items-center flex-wrap gap-2 shrink-0">
           <FirmsSyncButton />
           <a
             href={EXPORT_GEOJSON_URL}
@@ -62,7 +62,7 @@ export default async function MapPage() {
       </div>
 
       {/* Main Map Container */}
-      <div className="w-full h-[600px]">
+      <div className="w-full">
         <FireMap
           hotspotsData={hotspotsData}
           harmonizedCells={harmonizedCells}
