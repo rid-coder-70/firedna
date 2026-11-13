@@ -7,7 +7,7 @@ from typing import List, Optional
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from app.core.database import get_db
 from app.core.config import settings
 from app.models.models import HarmonizedObservation
@@ -56,7 +56,7 @@ def get_harmonized_results(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=50, le=500),
+    page_size: int = Query(default=250, le=500),
     db: Session = Depends(get_db)
 ):
     """List harmonized grid cells with HAI scores and component breakdowns."""
@@ -118,19 +118,36 @@ def compare_sensors(
             HarmonizedObservation.grid_cell_id == grid_cell_id
         ).order_by(HarmonizedObservation.obs_date).all()
     else:
-        # Find cell with highest recent HAI
-        top_cell = db.query(HarmonizedObservation).order_by(
-            desc(HarmonizedObservation.hai_score)
-        ).first()
+        # Find multi-day cell with both MODIS and VIIRS detections and highest combined activity
+        best_cell = (
+            db.query(HarmonizedObservation.grid_cell_id)
+            .group_by(HarmonizedObservation.grid_cell_id)
+            .having(
+                func.sum(HarmonizedObservation.modis_count) > 0,
+                func.sum(HarmonizedObservation.total_viirs_count) > 0
+            )
+            .order_by(
+                desc(func.count(HarmonizedObservation.id)),
+                desc(func.sum(HarmonizedObservation.total_detections_all))
+            )
+            .first()
+        )
 
-        if not top_cell:
-            return {
-                "status": "success",
-                "data": None,
-                "message": "No harmonized cells available yet. Run ingestion and harmonization first.",
-                "meta": ResponseMeta()
-            }
-        grid_cell_id = top_cell.grid_cell_id
+        if best_cell:
+            grid_cell_id = best_cell[0]
+        else:
+            top_cell = db.query(HarmonizedObservation).order_by(
+                desc(HarmonizedObservation.hai_score)
+            ).first()
+            if not top_cell:
+                return {
+                    "status": "success",
+                    "data": None,
+                    "message": "No harmonized cells available yet. Run ingestion and harmonization first.",
+                    "meta": ResponseMeta()
+                }
+            grid_cell_id = top_cell.grid_cell_id
+
         cells = db.query(HarmonizedObservation).filter(
             HarmonizedObservation.grid_cell_id == grid_cell_id
         ).order_by(HarmonizedObservation.obs_date).all()

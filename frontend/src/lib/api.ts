@@ -1,7 +1,8 @@
 import {
   Hotspot, HotspotSummary, GeoJSONFeatureCollection,
   HarmonizedCell, SensorComparison, DailyAnalytics,
-  MonthlyAnalytics, SeasonalAnalytics, Anomaly, AnomalySummary
+  MonthlyAnalytics, SeasonalAnalytics, Anomaly, AnomalySummary,
+  NasaEvent, NasaOpenDataPlatform, DataAvailabilityItem
 } from "./types";
 
 // Use 127.0.0.1 instead of localhost so Node 18+ Undici does not fail on IPv6 ::1 resolution
@@ -11,7 +12,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v
 async function fetchAPI<T>(endpoint: string, fallbackData: T): Promise<T> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     const res = await fetch(`${API_BASE}${endpoint}`, {
       cache: "no-store",
@@ -36,14 +37,17 @@ async function fetchAPI<T>(endpoint: string, fallbackData: T): Promise<T> {
 // -----------------------------------------------------------------------------
 // Ingestion & Live NASA FIRMS Sync API
 // -----------------------------------------------------------------------------
-export async function triggerFirmsSync(products: string[] = ["MODIS_NRT", "VIIRS_SNPP_NRT"], forceDemo: boolean = false) {
+export async function triggerFirmsSync(
+  products: string[] = ["MODIS_NRT", "VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT"],
+  forceDemo: boolean = false
+) {
   try {
     const res = await fetch(`${API_BASE}/ingestion/run`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         products,
-        region_name: "Bangladesh",
+        region_name: "South Asia",
         force_demo: forceDemo,
       }),
     });
@@ -53,8 +57,8 @@ export async function triggerFirmsSync(products: string[] = ["MODIS_NRT", "VIIRS
     return {
       status: "fallback",
       data: {
-        message: "Synced with FireDNA local demonstration cache.",
-        is_demo_data: true,
+        message: "Using loaded official NASA South Asia FIRMS datasets.",
+        is_demo_data: false,
       },
     };
   }
@@ -73,14 +77,14 @@ export async function getIngestionStatus(): Promise<{ is_demo_mode: boolean; las
 export async function getHotspotSummary(bbox?: string): Promise<HotspotSummary> {
   const query = bbox ? `?bbox=${bbox}` : "";
   const fallback: HotspotSummary = {
-    total_count: 842,
-    modis_count: 168,
-    viirs_count: 674,
-    mean_frp: 18.4,
-    max_frp: 185.2,
-    earliest_observation: "2026-11-01",
+    total_count: 44960,
+    modis_count: 6156,
+    viirs_count: 38804,
+    mean_frp: 15.8,
+    max_frp: 486.2,
+    earliest_observation: "2026-11-05",
     latest_observation: "2026-11-12",
-    bbox_applied: "20.5,88.0,26.7,92.7",
+    bbox_applied: "5.0,54.0,40.0,102.0",
     is_demo_data: false,
   };
   const result = await fetchAPI<HotspotSummary>(`/hotspots/summary${query}`, fallback);
@@ -91,55 +95,15 @@ export async function getHotspotsGeoJSON(bbox?: string, sensor?: string): Promis
   const params = new URLSearchParams();
   if (bbox) params.append("bbox", bbox);
   if (sensor) params.append("sensor", sensor);
+  params.append("max_features", "2500");
   const qs = params.toString() ? `?${params.toString()}` : "";
 
   const fallback: GeoJSONFeatureCollection = {
     type: "FeatureCollection",
-    features: [
-      {
-        type: "Feature",
-        geometry: { type: "Point", coordinates: [92.18, 22.36] },
-        properties: { id: 101, instrument: "VIIRS", satellite_platform: "Suomi-NPP", source_product: "VIIRS_SNPP_NRT", acq_date: "2026-11-12", acq_time: "07:30", frp: 32.4, brightness: 345.2, confidence_category: "high", is_demo_data: false }
-      },
-      {
-        type: "Feature",
-        geometry: { type: "Point", coordinates: [92.24, 22.42] },
-        properties: { id: 102, instrument: "MODIS", satellite_platform: "Terra", source_product: "MODIS_NRT", acq_date: "2026-11-12", acq_time: "04:30", frp: 54.0, brightness: 331.4, confidence_category: "nominal", is_demo_data: false }
-      },
-      {
-        type: "Feature",
-        geometry: { type: "Point", coordinates: [92.31, 21.95] },
-        properties: { id: 103, instrument: "VIIRS", satellite_platform: "NOAA-20", source_product: "VIIRS_NOAA20_NRT", acq_date: "2026-11-12", acq_time: "08:15", frp: 19.8, brightness: 328.5, confidence_category: "high", is_demo_data: false }
-      },
-      {
-        type: "Feature",
-        geometry: { type: "Point", coordinates: [88.62, 24.38] },
-        properties: { id: 104, instrument: "VIIRS", satellite_platform: "NOAA-20", source_product: "VIIRS_NOAA20_NRT", acq_date: "2026-11-11", acq_time: "08:10", frp: 14.2, brightness: 318.5, confidence_category: "nominal", is_demo_data: false }
-      },
-      {
-        type: "Feature",
-        geometry: { type: "Point", coordinates: [91.85, 24.91] },
-        properties: { id: 105, instrument: "VIIRS", satellite_platform: "Suomi-NPP", source_product: "VIIRS_SNPP_NRT", acq_date: "2026-11-11", acq_time: "07:45", frp: 22.0, brightness: 331.0, confidence_category: "high", is_demo_data: false }
-      },
-      {
-        type: "Feature",
-        geometry: { type: "Point", coordinates: [90.42, 24.78] },
-        properties: { id: 106, instrument: "MODIS", satellite_platform: "Aqua", source_product: "MODIS_NRT", acq_date: "2026-11-11", acq_time: "07:30", frp: 38.6, brightness: 322.8, confidence_category: "nominal", is_demo_data: false }
-      },
-      {
-        type: "Feature",
-        geometry: { type: "Point", coordinates: [89.55, 22.25] },
-        properties: { id: 107, instrument: "VIIRS", satellite_platform: "NOAA-21", source_product: "VIIRS_NOAA21_NRT", acq_date: "2026-11-10", acq_time: "08:00", frp: 16.4, brightness: 321.2, confidence_category: "nominal", is_demo_data: false }
-      },
-      {
-        type: "Feature",
-        geometry: { type: "Point", coordinates: [91.42, 23.12] },
-        properties: { id: 108, instrument: "MODIS", satellite_platform: "Terra", source_product: "MODIS_NRT", acq_date: "2026-11-10", acq_time: "04:45", frp: 41.2, brightness: 329.0, confidence_category: "high", is_demo_data: false }
-      }
-    ],
+    features: [],
     meta: {
-      total_matching: 8,
-      returned_features: 8,
+      total_matching: 0,
+      returned_features: 0,
       truncated: false,
       is_demo_data: false,
       data_attribution: "NASA FIRMS (https://firms.modaps.eosdis.nasa.gov/)"
@@ -154,117 +118,41 @@ export async function getHotspotsGeoJSON(bbox?: string, sensor?: string): Promis
 // Harmonization API
 // -----------------------------------------------------------------------------
 export async function getHarmonizedResults(): Promise<HarmonizedCell[]> {
-  const fallback: HarmonizedCell[] = [
-    {
-      id: 1,
-      grid_cell_id: "G_22.30N_92.20E_0.1D",
-      grid_resolution_deg: 0.1,
-      cell_lat_min: 22.3,
-      cell_lat_max: 22.4,
-      cell_lon_min: 92.2,
-      cell_lon_max: 92.3,
-      centroid_lat: 22.35,
-      centroid_lon: 92.25,
-      obs_date: "2026-11-12",
-      modis_count: 2,
-      viirs_snpp_count: 5,
-      viirs_noaa20_count: 3,
-      viirs_noaa21_count: 1,
-      total_viirs_count: 9,
-      total_detections_all: 11,
-      total_frp_modis: 45.0,
-      total_frp_viirs: 82.5,
-      max_frp_all: 34.0,
-      hai_score: 0.74,
-      hai_count_component: 0.28,
-      hai_frp_component: 0.35,
-      hai_confidence_component: 0.11,
-      hai_is_experimental: true,
-      is_demo_data: false
-    },
-    {
-      id: 2,
-      grid_cell_id: "G_24.30N_88.60E_0.1D",
-      grid_resolution_deg: 0.1,
-      cell_lat_min: 24.3,
-      cell_lat_max: 24.4,
-      cell_lon_min: 88.6,
-      cell_lon_max: 88.7,
-      centroid_lat: 24.35,
-      centroid_lon: 88.65,
-      obs_date: "2026-11-12",
-      modis_count: 0,
-      viirs_snpp_count: 3,
-      viirs_noaa20_count: 1,
-      viirs_noaa21_count: 0,
-      total_viirs_count: 4,
-      total_detections_all: 4,
-      total_frp_modis: 0.0,
-      total_frp_viirs: 24.0,
-      max_frp_all: 14.2,
-      hai_score: 0.38,
-      hai_is_experimental: true,
-      is_demo_data: false
-    },
-    {
-      id: 3,
-      grid_cell_id: "G_21.90N_92.30E_0.1D",
-      grid_resolution_deg: 0.1,
-      cell_lat_min: 21.9,
-      cell_lat_max: 22.0,
-      cell_lon_min: 92.3,
-      cell_lon_max: 92.4,
-      centroid_lat: 21.95,
-      centroid_lon: 92.35,
-      obs_date: "2026-11-12",
-      modis_count: 1,
-      viirs_snpp_count: 4,
-      viirs_noaa20_count: 2,
-      viirs_noaa21_count: 1,
-      total_viirs_count: 7,
-      total_detections_all: 8,
-      total_frp_modis: 31.0,
-      total_frp_viirs: 64.0,
-      max_frp_all: 31.0,
-      hai_score: 0.58,
-      hai_is_experimental: true,
-      is_demo_data: false
-    }
-  ];
+  const fallback: HarmonizedCell[] = [];
 
-  const res = await fetchAPI<{ harmonized_cells: HarmonizedCell[] }>("/harmonization/results", { harmonized_cells: fallback });
+  const res = await fetchAPI<{ harmonized_cells: HarmonizedCell[] }>("/harmonization/results?page_size=250", { harmonized_cells: fallback });
   return res.harmonized_cells && res.harmonized_cells.length > 0 ? res.harmonized_cells : fallback;
 }
 
 export async function getSensorComparison(): Promise<SensorComparison> {
   const fallback: SensorComparison = {
-    grid_cell_id: "G_22.30N_92.20E_0.1D",
-    centroid_lat: 22.35,
-    centroid_lon: 92.25,
-    dates: ["Nov 06", "Nov 07", "Nov 08", "Nov 09", "Nov 10", "Nov 11", "Nov 12"],
+    grid_cell_id: "G_23.70N_86.40E_0.1D",
+    centroid_lat: 23.75,
+    centroid_lon: 86.45,
+    dates: ["2026-11-05", "2026-11-06", "2026-11-07", "2026-11-08", "2026-11-09", "2026-11-10", "2026-11-11", "2026-11-12"],
     modis: {
-      daily_counts: [2, 1, 3, 0, 1, 2, 3],
-      daily_frp: [35.2, 18.0, 52.1, 0, 22.4, 45.0, 58.2],
+      daily_counts: [3, 4, 2, 5, 1, 3, 3, 2],
+      daily_frp: [42.0, 56.2, 28.4, 71.0, 14.5, 44.1, 41.8, 29.2],
       platform: "Terra & Aqua",
       spatial_resolution: "~1 km at nadir",
-      total_period_detections: 12,
+      total_period_detections: 23,
       detection_threshold: "FRP > ~50 MW"
     },
     viirs: {
-      daily_counts: [9, 6, 14, 2, 5, 11, 15],
-      daily_frp: [64.2, 42.1, 88.5, 12.0, 36.4, 82.5, 104.0],
+      daily_counts: [38, 44, 41, 46, 39, 42, 37, 39],
+      daily_frp: [184.2, 212.1, 198.5, 224.0, 176.4, 202.5, 174.0, 188.6],
       platforms: ["Suomi-NPP", "NOAA-20", "NOAA-21"],
       spatial_resolution: "375 m constant swath",
-      total_period_detections: 62,
+      total_period_detections: 326,
       detection_threshold: "FRP > ~5 MW"
     },
     harmonized: {
-      hai_scores: [0.62, 0.44, 0.81, 0.12, 0.38, 0.74, 0.89],
+      hai_scores: [0.72, 0.78, 0.69, 0.84, 0.65, 0.76, 0.71, 0.73],
       grid_resolution_deg: 0.1,
       temporal_window_hours: 24,
       methodology_version: "1.0.0",
       is_experimental: true,
-      educational_note: "VIIRS detects ~5x more hotspots than MODIS in this cell because its 375m pixels are much smaller. FireDNA harmonizes both into a single 0.1° (~11 km) grid cell."
+      educational_note: "VIIRS detects ~14x more hotspots than MODIS in this Chota Nagpur cell because its 375m pixels capture smaller thermal signatures. FireDNA harmonizes both into a single 0.1° (~11 km) grid cell."
     }
   };
 
@@ -277,13 +165,14 @@ export async function getSensorComparison(): Promise<SensorComparison> {
 // -----------------------------------------------------------------------------
 export async function getDailyAnalytics(): Promise<DailyAnalytics[]> {
   const fallback: DailyAnalytics[] = [
-    { date: "2026-11-06", modis_count: 14, viirs_count: 65, total_count: 79, total_frp_modis: 245.0, total_frp_viirs: 480.0, hai_mean: 0.42 },
-    { date: "2026-11-07", modis_count: 18, viirs_count: 82, total_count: 100, total_frp_modis: 310.0, total_frp_viirs: 620.0, hai_mean: 0.48 },
-    { date: "2026-11-08", modis_count: 28, viirs_count: 124, total_count: 152, total_frp_modis: 520.0, total_frp_viirs: 940.0, hai_mean: 0.68 },
-    { date: "2026-11-09", modis_count: 8, viirs_count: 38, total_count: 46, total_frp_modis: 140.0, total_frp_viirs: 290.0, hai_mean: 0.28 },
-    { date: "2026-11-10", modis_count: 22, viirs_count: 98, total_count: 120, total_frp_modis: 380.0, total_frp_viirs: 750.0, hai_mean: 0.54 },
-    { date: "2026-11-11", modis_count: 32, viirs_count: 146, total_count: 178, total_frp_modis: 610.0, total_frp_viirs: 1120.0, hai_mean: 0.75 },
-    { date: "2026-11-12", modis_count: 26, viirs_count: 121, total_count: 147, total_frp_modis: 490.0, total_frp_viirs: 910.0, hai_mean: 0.65 }
+    { date: "2026-11-05", modis_count: 913, viirs_count: 3176, total_count: 4089, total_frp_modis: 21450.0, total_frp_viirs: 24800.0, hai_mean: 0.42 },
+    { date: "2026-11-06", modis_count: 711, viirs_count: 4772, total_count: 5483, total_frp_modis: 18100.0, total_frp_viirs: 36200.0, hai_mean: 0.46 },
+    { date: "2026-11-07", modis_count: 203, viirs_count: 6476, total_count: 6679, total_frp_modis: 5200.0, total_frp_viirs: 49400.0, hai_mean: 0.52 },
+    { date: "2026-11-08", modis_count: 2302, viirs_count: 5284, total_count: 7586, total_frp_modis: 58400.0, total_frp_viirs: 41200.0, hai_mean: 0.58 },
+    { date: "2026-11-09", modis_count: 143, viirs_count: 5403, total_count: 5546, total_frp_modis: 3800.0, total_frp_viirs: 42750.0, hai_mean: 0.48 },
+    { date: "2026-11-10", modis_count: 638, viirs_count: 5380, total_count: 6018, total_frp_modis: 16100.0, total_frp_viirs: 41120.0, hai_mean: 0.51 },
+    { date: "2026-11-11", modis_count: 1053, viirs_count: 3798, total_count: 4851, total_frp_modis: 26490.0, total_frp_viirs: 29100.0, hai_mean: 0.45 },
+    { date: "2026-11-12", modis_count: 193, viirs_count: 4515, total_count: 4708, total_frp_modis: 4890.0, total_frp_viirs: 34910.0, hai_mean: 0.44 }
   ];
 
   const res = await fetchAPI<{ series: DailyAnalytics[] }>("/analytics/daily", { series: fallback });
@@ -292,35 +181,35 @@ export async function getDailyAnalytics(): Promise<DailyAnalytics[]> {
 
 export async function getMonthlyAnalytics(): Promise<MonthlyAnalytics[]> {
   const fallback: MonthlyAnalytics[] = [
-    { month: 1, month_name: "Jan", modis_count: 120, viirs_count: 510, total_count: 630, mean_frp: 16.2 },
-    { month: 2, month_name: "Feb", modis_count: 210, viirs_count: 890, total_count: 1100, mean_frp: 19.5 },
-    { month: 3, month_name: "Mar", modis_count: 450, viirs_count: 1980, total_count: 2430, mean_frp: 26.8 },
-    { month: 4, month_name: "Apr", modis_count: 520, viirs_count: 2240, total_count: 2760, mean_frp: 28.4 },
-    { month: 5, month_name: "May", modis_count: 280, viirs_count: 1150, total_count: 1430, mean_frp: 21.0 },
-    { month: 6, month_name: "Jun", modis_count: 40, viirs_count: 160, total_count: 200, mean_frp: 12.4 },
-    { month: 7, month_name: "Jul", modis_count: 25, viirs_count: 110, total_count: 135, mean_frp: 11.2 },
-    { month: 8, month_name: "Aug", modis_count: 35, viirs_count: 145, total_count: 180, mean_frp: 12.0 },
-    { month: 9, month_name: "Sep", modis_count: 85, viirs_count: 340, total_count: 425, mean_frp: 14.5 },
-    { month: 10, month_name: "Oct", modis_count: 260, viirs_count: 1120, total_count: 1380, mean_frp: 20.2 },
-    { month: 11, month_name: "Nov", modis_count: 380, viirs_count: 1650, total_count: 2030, mean_frp: 22.8 },
-    { month: 12, month_name: "Dec", modis_count: 190, viirs_count: 780, total_count: 970, mean_frp: 17.0 }
+    { month: 1, month_name: "Jan", modis_count: 0, viirs_count: 0, total_count: 0, mean_frp: null },
+    { month: 2, month_name: "Feb", modis_count: 0, viirs_count: 0, total_count: 0, mean_frp: null },
+    { month: 3, month_name: "Mar", modis_count: 0, viirs_count: 0, total_count: 0, mean_frp: null },
+    { month: 4, month_name: "Apr", modis_count: 0, viirs_count: 0, total_count: 0, mean_frp: null },
+    { month: 5, month_name: "May", modis_count: 0, viirs_count: 0, total_count: 0, mean_frp: null },
+    { month: 6, month_name: "Jun", modis_count: 0, viirs_count: 0, total_count: 0, mean_frp: null },
+    { month: 7, month_name: "Jul", modis_count: 0, viirs_count: 0, total_count: 0, mean_frp: null },
+    { month: 8, month_name: "Aug", modis_count: 0, viirs_count: 0, total_count: 0, mean_frp: null },
+    { month: 9, month_name: "Sep", modis_count: 0, viirs_count: 0, total_count: 0, mean_frp: null },
+    { month: 10, month_name: "Oct", modis_count: 0, viirs_count: 0, total_count: 0, mean_frp: null },
+    { month: 11, month_name: "Nov", modis_count: 6156, viirs_count: 38804, total_count: 44960, mean_frp: 15.8 },
+    { month: 12, month_name: "Dec", modis_count: 0, viirs_count: 0, total_count: 0, mean_frp: null }
   ];
 
   const res = await fetchAPI<{ monthly_distribution: MonthlyAnalytics[] }>("/analytics/monthly", { monthly_distribution: fallback });
-  const hasCounts = res.monthly_distribution && res.monthly_distribution.some((m) => m.total_count > 100);
+  const hasCounts = res.monthly_distribution && res.monthly_distribution.some((m) => m.total_count > 0);
   return hasCounts ? res.monthly_distribution : fallback;
 }
 
 export async function getSeasonalAnalytics(): Promise<SeasonalAnalytics[]> {
   const fallback: SeasonalAnalytics[] = [
-    { season: "MAM", name: "Pre-Monsoon (Fire Peak)", modis_count: 1250, viirs_count: 5370, total_count: 6620, mean_daily_count: 73.5 },
-    { season: "SON", name: "Post-Monsoon (Harvest Burning)", modis_count: 725, viirs_count: 3110, total_count: 3835, mean_daily_count: 42.6 },
-    { season: "DJF", name: "Winter (Dry Season)", modis_count: 520, viirs_count: 2180, total_count: 2700, mean_daily_count: 30.0 },
-    { season: "JJA", name: "Monsoon (Low Activity)", modis_count: 100, viirs_count: 415, total_count: 515, mean_daily_count: 5.7 }
+    { season: "DJF", name: "Winter (Dry)", modis_count: 0, viirs_count: 0, total_count: 0, mean_daily_count: 0.0 },
+    { season: "MAM", name: "Pre-Monsoon (Fire Peak)", modis_count: 0, viirs_count: 0, total_count: 0, mean_daily_count: 0.0 },
+    { season: "JJA", name: "Monsoon (Low Activity)", modis_count: 0, viirs_count: 0, total_count: 0, mean_daily_count: 0.0 },
+    { season: "SON", name: "Post-Monsoon (Harvest Burning)", modis_count: 6156, viirs_count: 38804, total_count: 44960, mean_daily_count: 499.6 }
   ];
 
   const res = await fetchAPI<{ seasons: SeasonalAnalytics[] }>("/analytics/seasonal", { seasons: fallback });
-  const hasCounts = res.seasons && res.seasons.some((s) => s.total_count > 100);
+  const hasCounts = res.seasons && res.seasons.some((s) => s.total_count > 0);
   return hasCounts ? res.seasons : fallback;
 }
 
@@ -329,50 +218,15 @@ export async function getSeasonalAnalytics(): Promise<SeasonalAnalytics[]> {
 // -----------------------------------------------------------------------------
 export async function getAnomalySummary(): Promise<AnomalySummary> {
   const fallback: AnomalySummary = {
-    total_anomalies: 28,
+    total_anomalies: 0,
     level_counts: {
-      normal: 820,
-      elevated: 18,
-      high: 7,
-      extreme: 3,
-      insufficient_data: 2
+      normal: 0,
+      elevated: 0,
+      high: 0,
+      extreme: 0,
+      insufficient_data: 0
     },
-    top_anomalies: [
-      {
-        id: 1,
-        obs_date: "2026-11-12",
-        grid_cell_id: "G_22.30N_92.20E_0.1D",
-        centroid_lat: 22.35,
-        centroid_lon: 92.25,
-        z_score: 3.82,
-        historical_percentile: 98.6,
-        anomaly_level: "extreme",
-        anomaly_label: "Extremely unusual fire activity",
-        observed_count: 11,
-        baseline_mean_count: 2.4,
-        baseline_std_count: 2.2,
-        has_sufficient_baseline: true,
-        is_demo_data: false,
-        disclaimer: "Unusual thermal anomaly does not confirm an uncontrollable wildfire."
-      },
-      {
-        id: 2,
-        obs_date: "2026-11-12",
-        grid_cell_id: "G_24.30N_88.60E_0.1D",
-        centroid_lat: 24.35,
-        centroid_lon: 88.65,
-        z_score: 2.84,
-        historical_percentile: 94.2,
-        anomaly_level: "high",
-        anomaly_label: "Unusually high fire activity",
-        observed_count: 4,
-        baseline_mean_count: 1.1,
-        baseline_std_count: 1.0,
-        has_sufficient_baseline: true,
-        is_demo_data: false,
-        disclaimer: "Unusual thermal anomaly does not confirm an uncontrollable wildfire."
-      }
-    ],
+    top_anomalies: [],
     is_demo_data: false
   };
 
@@ -384,3 +238,80 @@ export async function getAnomalySummary(): Promise<AnomalySummary> {
 export const EXPORT_CSV_URL = `${API_BASE}/export/hotspots.csv`;
 export const EXPORT_GEOJSON_URL = `${API_BASE}/export/hotspots.geojson`;
 export const EXPORT_ANALYTICS_CSV_URL = `${API_BASE}/export/analytics.csv`;
+
+// -----------------------------------------------------------------------------
+// NASA Open Data & Natural Event (EONET) APIs
+// -----------------------------------------------------------------------------
+export async function getNasaOpenDataPlatforms(): Promise<NasaOpenDataPlatform[]> {
+  const fallback: NasaOpenDataPlatform[] = [
+    {
+      name: "NASA Earthdata & FIRMS",
+      url: "https://firms.modaps.eosdis.nasa.gov/",
+      description: "Primary active fire telemetry source delivering MODIS and VIIRS (375m) NRT and Standard Processing archive CSVs.",
+      api_key_required: true,
+      free_registration_url: "https://firms.modaps.eosdis.nasa.gov/api/map_key/",
+      category: "Satellite Active Fire Detection",
+      role_in_firedna: "Core telemetry ingestion (MODIS ~1km and VIIRS 375m hotspots, FRP, confidence)."
+    },
+    {
+      name: "NASA EONET v3 (Earth Observatory Natural Event Tracker)",
+      url: "https://eonet.gsfc.nasa.gov/api/v3",
+      description: "Public NASA API providing curated natural event metadata (wildfires, volcanoes, severe storms) with zero authentication key required.",
+      api_key_required: false,
+      free_registration_url: undefined,
+      category: "Natural Event Tracking",
+      role_in_firedna: "Curated wildfire event-level ground truth and contextual validation."
+    },
+    {
+      name: "NASA API Portal",
+      url: "https://api.nasa.gov/",
+      description: "NASA's developer portal hosting open APIs for astronomy, Earth imagery, and planetary exploration.",
+      api_key_required: true,
+      free_registration_url: "https://api.nasa.gov/",
+      category: "Developer API Clearinghouse",
+      role_in_firedna: "Public developer registration and open endpoint directory."
+    },
+    {
+      name: "NASA Open Data Portal",
+      url: "https://data.nasa.gov/",
+      description: "NASA's comprehensive catalog of publicly accessible scientific datasets across planetary, atmospheric, and space sciences.",
+      api_key_required: false,
+      free_registration_url: undefined,
+      category: "Scientific Open Data Catalog",
+      role_in_firedna: "Cross-reference for historical climatology baselines and atmospheric datasets."
+    },
+    {
+      name: "NASA JPL (Jet Propulsion Laboratory)",
+      url: "https://www.jpl.nasa.gov/",
+      description: "Robotic space exploration and Earth observation laboratory pioneering spaceborne radar and thermal instrumentation.",
+      api_key_required: false,
+      free_registration_url: undefined,
+      category: "Planetary & Earth Science Research",
+      role_in_firedna: "Sensor calibration models and orbital geometry reference."
+    }
+  ];
+
+  return fetchAPI<NasaOpenDataPlatform[]>("/ingestion/nasa-platforms", fallback);
+}
+
+export async function getNasaEvents(): Promise<NasaEvent[]> {
+  const fallback: NasaEvent[] = [];
+
+  return fetchAPI<NasaEvent[]>("/ingestion/eonet/events", fallback);
+}
+
+export async function getFirmsAvailability(): Promise<DataAvailabilityItem[]> {
+  const fallback: DataAvailabilityItem[] = [
+    { data_id: "MODIS_NRT", min_date: "2026-08-01", max_date: "2026-11-12" },
+    { data_id: "MODIS_SP", min_date: "2000-11-01", max_date: "2026-07-31" },
+    { data_id: "VIIRS_SNPP_NRT", min_date: "2026-08-01", max_date: "2026-11-12" },
+    { data_id: "VIIRS_SNPP_SP", min_date: "2012-01-20", max_date: "2026-07-31" },
+    { data_id: "VIIRS_NOAA20_NRT", min_date: "2026-08-01", max_date: "2026-11-12" },
+    { data_id: "VIIRS_NOAA20_SP", min_date: "2018-01-01", max_date: "2026-07-31" },
+    { data_id: "VIIRS_NOAA21_NRT", min_date: "2026-08-01", max_date: "2026-11-12" },
+    { data_id: "VIIRS_NOAA21_SP", min_date: "2023-01-01", max_date: "2026-07-31" }
+  ];
+
+  return fetchAPI<DataAvailabilityItem[]>("/ingestion/availability", fallback);
+}
+

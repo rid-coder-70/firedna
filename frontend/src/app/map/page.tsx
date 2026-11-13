@@ -1,8 +1,15 @@
 import dynamic from "next/dynamic";
-import { getHotspotsGeoJSON, getHarmonizedResults, EXPORT_GEOJSON_URL, EXPORT_CSV_URL } from "@/lib/api";
+import {
+  getHotspotsGeoJSON,
+  getHarmonizedResults,
+  getNasaEvents,
+  EXPORT_GEOJSON_URL,
+  EXPORT_CSV_URL
+} from "@/lib/api";
 import { Flame, Download } from "lucide-react";
 import EducationCard from "@/components/education/EducationCard";
 import FirmsSyncButton from "@/components/ui/FirmsSyncButton";
+import { FadeIn } from "@/components/ui/MotionWrapper";
 
 // Dynamic client import for Leaflet map
 const FireMap = dynamic(() => import("@/components/map/FireMap"), {
@@ -18,13 +25,17 @@ const FireMap = dynamic(() => import("@/components/map/FireMap"), {
 });
 
 export default async function MapPage() {
-  const hotspotsData = await getHotspotsGeoJSON();
-  const harmonizedCells = await getHarmonizedResults();
+  const [hotspotsData, harmonizedCells, nasaEvents] = await Promise.all([
+    getHotspotsGeoJSON(),
+    getHarmonizedResults(),
+    getNasaEvents()
+  ]);
 
   return (
-    <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
+    <div className="py-5 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-5 sm:space-y-8">
       {/* Minimal Header Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-[#FCFBF7] p-5 sm:p-6 rounded-2xl border border-[#E2DEC9] shadow-sm">
+      <FadeIn>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-[#FCFBF7] p-4 sm:p-6 rounded-2xl border border-[#E2DEC9] shadow-sm">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-extrabold text-[#10243A]">
@@ -35,7 +46,7 @@ export default async function MapPage() {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-[#4A607A] mt-1">
-            Visualizing active thermal anomalies from MODIS (~1 km) and VIIRS (375 m) alongside FireDNA 0.1° Harmonized Grid Cells.
+            Visualizing thermal anomalies from MODIS (~1 km), VIIRS (375 m), NASA EONET v3 wildfire events, and FireDNA 0.1° Harmonized Grid Cells.
           </p>
         </div>
 
@@ -60,17 +71,19 @@ export default async function MapPage() {
           </a>
         </div>
       </div>
+      </FadeIn>
 
-      {/* Main Map Container */}
-      <div className="w-full">
+      {/* Main Map Container (South Asia Regional Domain) */}
+      <FadeIn delay={0.06} className="w-full">
         <FireMap
           hotspotsData={hotspotsData}
           harmonizedCells={harmonizedCells}
-          initialLat={23.685}
-          initialLon={90.3563}
-          initialZoom={7}
+          nasaEvents={nasaEvents}
+          initialLat={22.0}
+          initialLon={78.0}
+          initialZoom={5}
         />
-      </div>
+      </FadeIn>
 
       {/* Educational Context Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

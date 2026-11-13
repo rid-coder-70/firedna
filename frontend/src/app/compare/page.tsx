@@ -2,14 +2,16 @@ import { getSensorComparison } from "@/lib/api";
 import { SplitSquareVertical, Info } from "lucide-react";
 import EducationCard from "@/components/education/EducationCard";
 import ComparisonChart from "@/components/charts/ComparisonChart";
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/MotionWrapper";
 
 export default async function ComparePage() {
   const comparison = await getSensorComparison();
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8">
+    <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
       {/* Page Header */}
-      <div className="bg-[#FCFBF7] p-6 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm space-y-4">
+      <FadeIn>
+        <div className="bg-[#FCFBF7] p-5 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm space-y-4">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-[#10243A] text-[#FF6B2B] flex items-center justify-center">
             <SplitSquareVertical className="w-5 h-5" />
@@ -33,11 +35,12 @@ export default async function ComparePage() {
           </p>
         </div>
       </div>
+      </FadeIn>
 
       {/* 3-Column Synchronized Laboratory */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
         {/* Column 1: MODIS */}
-        <div className="rounded-2xl bg-[#FCFBF7] border border-[#E2DEC9] p-6 shadow-sm space-y-4">
+        <StaggerItem hoverLift className="rounded-2xl bg-[#FCFBF7] border border-[#E2DEC9] p-5 sm:p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-[#E2DEC9] pb-3">
             <div className="flex items-center space-x-2">
               <span className="w-3 h-3 rounded-full bg-[#E85D5D]"></span>
@@ -72,10 +75,10 @@ export default async function ComparePage() {
           <div className="p-3 bg-[#F7F6EF] border border-[#E2DEC9] rounded-xl text-[11px] text-[#4A607A] leading-relaxed">
             Fewer detections due to coarser 1 km footprint, but provides over 20+ years of uninterrupted historical baseline records since 2000.
           </div>
-        </div>
+        </StaggerItem>
 
         {/* Column 2: VIIRS */}
-        <div className="rounded-2xl bg-[#FCFBF7] border border-[#E2DEC9] p-6 shadow-sm space-y-4">
+        <StaggerItem hoverLift className="rounded-2xl bg-[#FCFBF7] border border-[#E2DEC9] p-5 sm:p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-[#E2DEC9] pb-3">
             <div className="flex items-center space-x-2">
               <span className="w-3 h-3 rounded-full bg-[#FF6B2B]"></span>
@@ -110,10 +113,10 @@ export default async function ComparePage() {
           <div className="p-3 bg-[#F7F6EF] border border-[#E2DEC9] rounded-xl text-[11px] text-[#4A607A] leading-relaxed">
             Detects ~5× more hotspots in this cell. 375 m channels capture smaller perimeter fires and cool nighttime residual heat.
           </div>
-        </div>
+        </StaggerItem>
 
         {/* Column 3: FireDNA Harmonized (30% Navy Structural Card) */}
-        <div className="rounded-2xl bg-[#10243A] text-[#F7F6EF] p-6 shadow-md space-y-4">
+        <StaggerItem hoverLift className="rounded-2xl bg-[#10243A] text-[#F7F6EF] p-5 sm:p-6 shadow-md space-y-4">
           <div className="flex items-center justify-between border-b border-white/10 pb-3">
             <div className="flex items-center space-x-2">
               <span className="w-3 h-3 rounded-full bg-[#FF9F43]"></span>
@@ -148,11 +151,12 @@ export default async function ComparePage() {
           <div className="p-3 bg-white/5 border border-white/10 rounded-xl text-[11px] text-[#F7F6EF]/80 leading-relaxed">
             Composite index balancing count (40%), log-scaled maximum FRP (45%), and confidence (15%) for fair cross-sensor comparison.
           </div>
-        </div>
-      </div>
+        </StaggerItem>
+      </StaggerContainer>
 
       {/* Synchronized Recharts Visualization */}
-      <div className="bg-[#FCFBF7] p-6 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm space-y-4">
+      <FadeIn delay={0.08}>
+      <div className="bg-[#FCFBF7] p-5 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="text-lg font-extrabold text-[#10243A]">
@@ -185,6 +189,7 @@ export default async function ComparePage() {
           haiScores={comparison.harmonized.hai_scores}
         />
       </div>
+      </FadeIn>
 
       {/* Educational Deep Dive */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

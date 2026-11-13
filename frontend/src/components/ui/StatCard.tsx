@@ -22,7 +22,7 @@ export default function StatCard({
   const isFire = variant === "fire" || variant === "orange" || variant === "red";
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-[#E2DEC9] bg-[#FCFBF7] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#10243A]/30 hover:shadow-md">
+    <div className="group relative overflow-hidden rounded-2xl border border-[#E2DEC9] bg-[#FCFBF7] p-4 sm:p-5 transition-all duration-200 hover:border-[#10243A]/30 hover:shadow-md h-full">
       {/* Subtle top accent bar */}
       <div
         className={`absolute inset-x-0 top-0 h-1 ${
@@ -31,11 +31,11 @@ export default function StatCard({
       />
 
       <div className="flex items-start justify-between gap-3 pt-1">
-        <div className="space-y-1">
+        <div className="space-y-1 min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#4A607A]">
             {title}
           </p>
-          <div className="text-3xl font-extrabold tracking-tight text-[#10243A]">
+          <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#10243A] truncate">
             {value}
           </div>
         </div>

@@ -26,20 +26,22 @@ logger = logging.getLogger("firedna.main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan: initialize database tables and seed baseline demo data if empty."""
+    """Application lifespan: initialize database tables and load real NASA South Asia datasets if empty or synthetic."""
     logger.info("Initializing FireDNA Database...")
     init_db()
-    # Auto-seed database if empty so frontend never sees empty state
     from app.core.database import SessionLocal
-    from app.models.models import SatelliteObservation
+    from app.models.models import SatelliteObservation, NasaEvent
     db = SessionLocal()
     try:
-        if db.query(SatelliteObservation).count() == 0:
-            logger.info("Database is empty. Auto-seeding initial satellite observations & harmonized cells...")
+        has_empty = db.query(SatelliteObservation).count() == 0
+        has_demo = db.query(SatelliteObservation).filter(SatelliteObservation.is_demo_data == True).count() > 0
+        has_no_events = db.query(NasaEvent).count() == 0
+        if has_empty or has_demo or has_no_events:
+            logger.info("Refreshing database with official NASA FIRMS & EONET South Asia datasets...")
             from app.utils.seed_demo_data import seed_database
-            await seed_database()
+            await seed_database(clear_existing=(has_empty or has_demo))
     except Exception as exc:
-        logger.warning("Auto-seed check failed: %s", exc)
+        logger.warning("Database initialization check failed: %s", exc)
     finally:
         db.close()
     logger.info("Database initialized successfully.")
@@ -63,7 +65,8 @@ app = FastAPI(
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if settings.DEBUG else settings.CORS_ORIGINS,
+    allow_origins=["*"] if (settings.DEBUG or "*" in settings.CORS_ORIGINS) else settings.CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -81,13 +84,15 @@ app.include_router(exports_router, prefix=settings.API_V1_STR)
 @app.get("/health", tags=["Health"])
 def health_check():
     """System health check and mode indicator."""
-    is_demo = not bool(settings.FIRMS_MAP_KEY and settings.FIRMS_MAP_KEY.strip())
+    from app.ingestion.firms_client import FIRMSClient
+    is_demo = FIRMSClient().is_demo_mode
     return {
         "status": "healthy",
         "service": "FireDNA Backend API",
         "version": settings.VERSION,
         "environment": settings.ENVIRONMENT,
         "demo_mode": is_demo,
+        "region": "South Asia",
         "attribution": "NASA FIRMS — Fire Information for Resource Management System"
     }
 
@@ -99,7 +104,7 @@ def app_info():
         "name": settings.PROJECT_NAME,
         "version": settings.VERSION,
         "tagline": "Understand Fire. Connect Data. Protect Our Planet.",
-        "primary_demonstration_area": "Bangladesh and South Asia",
+        "primary_demonstration_area": "South Asia",
         "supported_products": settings.SUPPORTED_PRODUCTS,
         "methodology": {
             "spatial_grid_deg": settings.DEFAULT_GRID_RESOLUTION_DEG,
