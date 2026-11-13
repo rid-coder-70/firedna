@@ -240,10 +240,8 @@ class HarmonizationService:
                 harm_objects.append(harm_obj)
 
             if harm_objects:
-                chunk_size = 5000
-                for idx in range(0, len(harm_objects), chunk_size):
-                    self.db.add_all(harm_objects[idx:idx + chunk_size])
-                    self.db.commit()
+                self.db.add_all(harm_objects)
+                self.db.commit()
 
             proc_run.output_record_count = len(harm_objects)
             proc_run.status = "success"

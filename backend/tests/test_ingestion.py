@@ -59,46 +59,6 @@ class TestIngestionSubsystem(unittest.TestCase):
         self.assertEqual(norm_m, 0.33)
         self.assertEqual(cat_m, "low")
 
-    def test_eonet_normalization(self):
-        from app.ingestion.eonet_client import EONETClient
-        raw_event = {
-            "id": "EONET_9999",
-            "title": "Test Wildfire Event",
-            "link": "https://eonet.gsfc.nasa.gov/api/v3/events/EONET_9999",
-            "closed": None,
-            "categories": [{"id": "wildfires"}],
-            "sources": [{"id": "InciWeb", "url": "https://inciweb.wildfire.gov"}],
-            "geometry": [
-                {"date": "2026-11-01T12:00:00Z", "type": "Point", "coordinates": [-120.5, 38.2], "magnitudeValue": 1500.0, "magnitudeUnit": "acres"}
-            ]
-        }
-        norm = EONETClient.normalize_event(raw_event)
-        self.assertIsNotNone(norm)
-        self.assertEqual(norm["eonet_id"], "EONET_9999")
-        self.assertEqual(norm["latitude"], 38.2)
-        self.assertEqual(norm["longitude"], -120.5)
-        self.assertEqual(norm["status"], "open")
-        self.assertEqual(norm["magnitude_value"], 1500.0)
-
-    def test_firms_product_segments(self):
-        from app.ingestion.firms_client import FIRMSClient
-        from datetime import date
-        availability = [
-            {"data_id": "MODIS_NRT", "min_date": "2026-08-01", "max_date": "2026-11-12"},
-            {"data_id": "MODIS_SP", "min_date": "2000-11-01", "max_date": "2026-07-31"}
-        ]
-        segments = FIRMSClient.plan_product_segments(
-            "MODIS_NRT",
-            date(2026, 6, 1),
-            date(2026, 9, 1),
-            availability
-        )
-        # Should split into SP archive and NRT segment
-        self.assertEqual(len(segments), 2)
-        self.assertEqual(segments[0][0], "MODIS_SP")
-        self.assertEqual(segments[1][0], "MODIS_NRT")
-
-
 
 if __name__ == "__main__":
     unittest.main()

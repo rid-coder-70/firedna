@@ -86,10 +86,7 @@ class DemoDataGenerator:
             header = "latitude,longitude,bright_ti4,scan,track,acq_date,acq_time,satellite,instrument,confidence,version,bright_ti5,frp,daynight,type"
             lines.append(header)
 
-            sat_map = {
-                "VIIRS_SNPP_NRT": "N", "VIIRS_NOAA20_NRT": "N20", "VIIRS_NOAA21_NRT": "N21",
-                "VIIRS_SNPP_SP": "N", "VIIRS_NOAA20_SP": "N20", "VIIRS_NOAA21_SP": "N21",
-            }
+            sat_map = {"VIIRS_SNPP_NRT": "N", "VIIRS_NOAA20_NRT": "N20", "VIIRS_NOAA21_NRT": "N21"}
             sat_code = sat_map.get(product, "N")
 
             for _ in range(total_records):

@@ -38,7 +38,7 @@ class DataValidator:
         # Categorical (typical MODIS or fallback)
         if c_str == "high" or c_str == "h":
             return 1.0, "high"
-        elif c_str in ("nominal", "med", "medium", "m"):
+        elif c_str in ("nominal","n", "med", "medium", "m"):
             return 0.66, "nominal"
         elif c_str in ("low", "l"):
             return 0.33, "low"
