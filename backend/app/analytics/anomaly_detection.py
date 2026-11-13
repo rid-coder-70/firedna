@@ -38,9 +38,40 @@ class AnomalyDetector:
         else:
             return "extreme", "Extremely unusual fire activity"
 
+    def _compute_regional_monthly_stats(self, month_idx: int) -> Dict[str, float]:
+        """Compute real monthly cell-day mean and std across all harmonized observations in the month."""
+        all_cells = (
+            self.db.query(
+                HarmonizedObservation.obs_date,
+                HarmonizedObservation.total_detections_all,
+                HarmonizedObservation.max_frp_all
+            )
+            .all()
+        )
+        month_rows = [r for r in all_cells if r[0] and r[0].month == month_idx]
+        if not month_rows:
+            return {"mean_count": 2.0, "std_count": 2.0, "median_count": 1.0, "mean_frp": 15.0, "std_frp": 15.0, "n": 1}
+
+        counts = [float(r[1] or 0) for r in month_rows]
+        frps = [float(r[2] or 0.0) for r in month_rows]
+        mean_c = float(np.mean(counts))
+        std_c = max(float(np.std(counts)), 1.0)
+        med_c = float(np.median(counts))
+        mean_f = float(np.mean(frps))
+        std_f = max(float(np.std(frps)), 1.0)
+        return {
+            "mean_count": round(mean_c, 2),
+            "std_count": round(std_c, 2),
+            "median_count": round(med_c, 2),
+            "mean_frp": round(mean_f, 2),
+            "std_frp": round(std_f, 2),
+            "n": len(month_rows),
+        }
+
     def detect_anomalies_for_date(self, target_date: date) -> List[ActivityAnomaly]:
         """
         Runs batch anomaly detection for all harmonized cells on a specific date.
+        Uses full-month query without large IN() clauses to remain SQLite-safe at 45k+ scale.
         """
         cells = self.db.query(HarmonizedObservation).filter(
             HarmonizedObservation.obs_date == target_date
@@ -50,17 +81,15 @@ class AnomalyDetector:
             return []
 
         month_idx = target_date.month
+        reg_stats = self._compute_regional_monthly_stats(month_idx)
 
-        # Pre-load existing baselines in one query
-        cell_ids = [c.grid_cell_id for c in cells]
+        # Pre-load existing baselines for this month (no giant IN clause)
         baselines = self.db.query(HistoricalBaseline).filter(
-            HistoricalBaseline.grid_cell_id.in_(cell_ids),
             HistoricalBaseline.instrument == "ALL",
             HistoricalBaseline.month_of_year == month_idx
         ).all()
         baseline_map = {b.grid_cell_id: b for b in baselines}
 
-        # For cells missing a baseline, create an initial baseline record
         new_baselines = []
         for cell in cells:
             if cell.grid_cell_id not in baseline_map:
@@ -68,24 +97,25 @@ class AnomalyDetector:
                     grid_cell_id=cell.grid_cell_id,
                     instrument="ALL",
                     month_of_year=month_idx,
-                    mean_count=float(cell.total_detections_all),
-                    std_count=max(float(cell.total_detections_all) * 0.35, 1.0),
-                    median_count=float(cell.total_detections_all),
-                    mean_frp=float(cell.max_frp_all or 0.0),
-                    std_frp=max(float(cell.max_frp_all or 0.0) * 0.35, 1.0),
+                    mean_count=reg_stats["mean_count"],
+                    std_count=reg_stats["std_count"],
+                    median_count=reg_stats["median_count"],
+                    mean_frp=reg_stats["mean_frp"],
+                    std_frp=reg_stats["std_frp"],
                     sample_years=1,
-                    sample_records=1,
+                    sample_records=reg_stats["n"],
                     baseline_start_year=target_date.year,
                     baseline_end_year=target_date.year,
-                    is_sufficient=False,
+                    is_sufficient=True,
                     is_demo_data=cell.is_demo_data
                 )
                 new_baselines.append(b)
                 baseline_map[cell.grid_cell_id] = b
 
         if new_baselines:
-            self.db.add_all(new_baselines)
-            self.db.commit()
+            for idx in range(0, len(new_baselines), 5000):
+                self.db.add_all(new_baselines[idx:idx + 5000])
+                self.db.commit()
 
         # Existing anomalies for this date
         existing_anomalies = {
@@ -135,7 +165,23 @@ class AnomalyDetector:
             anomaly.is_demo_data = cell.is_demo_data
 
         if anomalies_to_save:
-            self.db.add_all(anomalies_to_save)
-        self.db.commit()
+            for idx in range(0, len(anomalies_to_save), 5000):
+                self.db.add_all(anomalies_to_save[idx:idx + 5000])
+                self.db.commit()
+        else:
+            self.db.commit()
 
         return list(existing_anomalies.values()) + anomalies_to_save
+
+    def detect_anomalies_for_all_dates(self) -> int:
+        """Run anomaly detection for every distinct observation date in HarmonizedObservation."""
+        distinct_dates = [
+            r[0] for r in
+            self.db.query(HarmonizedObservation.obs_date).distinct().order_by(HarmonizedObservation.obs_date).all()
+            if r[0] is not None
+        ]
+        total = 0
+        for d in distinct_dates:
+            anomalies = self.detect_anomalies_for_date(d)
+            total += len(anomalies)
+        return total

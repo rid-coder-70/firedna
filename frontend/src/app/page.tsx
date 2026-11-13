@@ -1,65 +1,70 @@
 import Link from "next/link";
 import {
   Flame, MapPin, ArrowRight, Activity, Eye,
-  Layers, ShieldCheck, Download, Grid2X2
+  Layers, ShieldCheck, Download, Grid2X2, Globe2
 } from "lucide-react";
 import StatCard from "@/components/ui/StatCard";
 import EducationCard from "@/components/education/EducationCard";
 import FirmsSyncButton from "@/components/ui/FirmsSyncButton";
-import { getHotspotSummary, getHarmonizedResults, EXPORT_CSV_URL } from "@/lib/api";
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/MotionWrapper";
+import { getHotspotSummary, getHarmonizedResults, getNasaEvents, EXPORT_CSV_URL } from "@/lib/api";
 
 export default async function HomePage() {
-  const summary = await getHotspotSummary();
-  const harmonizedCells = await getHarmonizedResults();
+  const [summary, harmonizedCells, eonetEvents] = await Promise.all([
+    getHotspotSummary(),
+    getHarmonizedResults(),
+    getNasaEvents()
+  ]);
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-12 px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl space-y-10 sm:space-y-12 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
       {/* Minimal Editorial Hero (60% Cream Surface, 30% Navy Structure, 10% Fire Accents) */}
-      <section className="fd-enter relative overflow-hidden rounded-3xl border border-[#E2DEC9] bg-[#FCFBF7] p-6 sm:p-10 lg:p-12 shadow-sm">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.35fr_0.85fr] lg:gap-12">
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#E2DEC9] bg-[#F7F6EF] px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-[#10243A]">
-              <span className="h-2 w-2 rounded-full bg-[#FF6B2B]" />
-              <span>NASA Space Apps Challenge 2026 · MODIS &amp; VIIRS</span>
-            </div>
+      <FadeIn>
+        <section className="relative overflow-hidden rounded-3xl border border-[#E2DEC9] bg-[#FCFBF7] p-5 sm:p-10 lg:p-12 shadow-sm">
+          <div className="grid items-center gap-8 lg:grid-cols-[1.35fr_0.85fr] lg:gap-12">
+            <div className="space-y-5 sm:space-y-6">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#E2DEC9] bg-[#F7F6EF] px-3 py-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#10243A]">
+                <span className="h-2 w-2 rounded-full bg-[#FF6B2B]" />
+                <span>NASA Space Apps Challenge 2026 · MODIS &amp; VIIRS</span>
+              </div>
 
-            <div className="space-y-4">
-              <h1 className="max-w-3xl text-4xl font-black leading-[1.08] tracking-tight text-[#10243A] sm:text-5xl lg:text-6xl">
-                Two satellites.
-                <span className="block text-[#FF6B2B]">
-                  Different fire counts.
-                </span>
-                <span className="block text-[#10243A]">One unified view.</span>
-              </h1>
-              <p className="max-w-2xl text-base leading-relaxed text-[#4A607A] sm:text-lg">
-                MODIS (~1 km) and VIIRS (375 m) observe fires at different optical resolutions and overpass times, so their raw hotspot counts are never directly equivalent. FireDNA preserves each instrument&apos;s provenance and harmonizes them onto a shared 0.1° grid across Bangladesh and South Asia.
-              </p>
-            </div>
+              <div className="space-y-3 sm:space-y-4">
+                <h1 className="max-w-3xl text-3xl font-bold leading-[1.08] tracking-tight text-[#10243A] sm:text-5xl lg:text-6xl">
+                  Two satellites.
+                  <span className="block text-[#FF6B2B]">
+                    Different fire counts.
+                  </span>
+                  <span className="block text-[#10243A]">One unified view.</span>
+                </h1>
+                <p className="max-w-2xl text-sm leading-relaxed text-[#4A607A] sm:text-lg">
+                  MODIS (~1 km) and VIIRS (375 m) observe fires at different optical resolutions and overpass times, so their raw hotspot counts are never directly equivalent. FireDNA preserves each instrument&apos;s provenance and harmonizes them onto a shared 0.1° grid across South Asia.
+                </p>
+              </div>
 
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <Link
-                href="/map"
-                className="group inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF6B2B] px-5 py-3 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#e55a1d]"
-              >
-                <span>Explore Interactive Fire Map</span>
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link
-                href="/compare"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#10243A] px-5 py-3 text-sm font-semibold text-[#F7F6EF] transition-colors hover:bg-[#1E3A5F]"
-              >
-                <Eye className="h-4 w-4 text-[#FF9F43]" />
-                <span>Compare Sensors</span>
-              </Link>
-              <a
-                href={EXPORT_CSV_URL}
-                download
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E2DEC9] bg-[#F7F6EF] px-4 py-3 text-sm font-semibold text-[#10243A] transition-colors hover:border-[#10243A]"
-              >
-                <Download className="h-4 w-4" />
-                <span>Export CSV</span>
-              </a>
-            </div>
+              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-3 pt-1">
+                <Link
+                  href="/map"
+                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF6B2B] px-5 py-3 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#e55a1d] active:scale-[0.98]"
+                >
+                  <span>Explore Interactive Fire Map</span>
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <Link
+                  href="/compare"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#10243A] px-5 py-3 text-sm font-semibold text-[#F7F6EF] transition-all duration-200 hover:bg-[#1E3A5F] active:scale-[0.98]"
+                >
+                  <Eye className="h-4 w-4 text-[#FF9F43]" />
+                  <span>Compare Sensors</span>
+                </Link>
+                <a
+                  href={EXPORT_CSV_URL}
+                  download
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E2DEC9] bg-[#F7F6EF] px-4 py-3 text-sm font-semibold text-[#10243A] transition-all duration-200 hover:border-[#10243A] active:scale-[0.98]"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Export CSV</span>
+                </a>
+              </div>
 
             <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#E2DEC9] pt-4">
               <p className="flex items-center gap-2 text-xs text-[#4A607A]">
@@ -135,9 +140,10 @@ export default async function HomePage() {
           </aside>
         </div>
       </section>
+      </FadeIn>
 
       {/* Regional Telemetry KPIs */}
-      <section className="fd-enter fd-delay-1 space-y-5">
+      <FadeIn delay={0.05} className="space-y-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-[#FF6B2B]">
@@ -160,45 +166,63 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Total Detections"
-            value={summary.total_count.toLocaleString()}
-            subtitle="Active thermal anomalies"
-            icon={Flame}
-            variant="fire"
-            badge="All Sensors"
-          />
-          <StatCard
-            title="MODIS (Terra & Aqua)"
-            value={summary.modis_count.toLocaleString()}
-            subtitle="~1 km spatial footprint"
-            icon={Layers}
-            variant="navy"
-            trend={`${((summary.modis_count / (summary.total_count || 1)) * 100).toFixed(0)}% share`}
-          />
-          <StatCard
-            title="VIIRS (SNPP & NOAA)"
-            value={summary.viirs_count.toLocaleString()}
-            subtitle="375 m high-res swath"
-            icon={Activity}
-            variant="fire"
-            trend={`${((summary.viirs_count / (summary.total_count || 1)) * 100).toFixed(0)}% share`}
-          />
-          <StatCard
-            title="Harmonized Cells"
-            value={harmonizedCells.length}
-            subtitle="0.1° (~11 km) unified grid"
-            icon={ShieldCheck}
-            variant="navy"
-            badge="HAI Engine"
-          />
-        </div>
-      </section>
+        <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <StaggerItem hoverLift>
+            <StatCard
+              title="Total Detections"
+              value={summary.total_count.toLocaleString()}
+              subtitle="Active thermal anomalies"
+              icon={Flame}
+              variant="fire"
+              badge="All Sensors"
+            />
+          </StaggerItem>
+          <StaggerItem hoverLift>
+            <StatCard
+              title="MODIS (Terra & Aqua)"
+              value={summary.modis_count.toLocaleString()}
+              subtitle="~1 km spatial footprint"
+              icon={Layers}
+              variant="navy"
+              trend={`${((summary.modis_count / (summary.total_count || 1)) * 100).toFixed(0)}% share`}
+            />
+          </StaggerItem>
+          <StaggerItem hoverLift>
+            <StatCard
+              title="VIIRS (SNPP & NOAA)"
+              value={summary.viirs_count.toLocaleString()}
+              subtitle="375 m high-res swath"
+              icon={Activity}
+              variant="fire"
+              trend={`${((summary.viirs_count / (summary.total_count || 1)) * 100).toFixed(0)}% share`}
+            />
+          </StaggerItem>
+          <StaggerItem hoverLift>
+            <StatCard
+              title="Harmonized Cells"
+              value={harmonizedCells.length}
+              subtitle="0.1° (~11 km) unified grid"
+              icon={ShieldCheck}
+              variant="navy"
+              badge="HAI Engine"
+            />
+          </StaggerItem>
+          <StaggerItem hoverLift>
+            <StatCard
+              title="NASA EONET Events"
+              value={eonetEvents.length}
+              subtitle="Curated wildfire events (v3)"
+              icon={Globe2}
+              variant="navy"
+              badge="100% Open"
+            />
+          </StaggerItem>
+        </StaggerContainer>
+      </FadeIn>
 
       {/* Core Navigation Pathways */}
-      <section className="fd-enter fd-delay-2 grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <div className="group flex flex-col justify-between rounded-2xl border border-[#E2DEC9] bg-[#FCFBF7] p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#10243A]/40 hover:shadow-md">
+      <StaggerContainer className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <StaggerItem hoverLift className="group flex flex-col justify-between rounded-2xl border border-[#E2DEC9] bg-[#FCFBF7] p-6 transition-shadow duration-200 hover:border-[#10243A]/40 hover:shadow-md">
           <div className="space-y-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#10243A] text-[#FF6B2B]">
               <MapPin className="h-5 w-5" />
@@ -207,7 +231,7 @@ export default async function HomePage() {
               Interactive Satellite Fire Map
             </h3>
             <p className="text-sm leading-relaxed text-[#4A607A]">
-              Inspect thermal hotspots across Bangladesh, the Chittagong Hill Tracts, and the Sundarbans with layer toggles for MODIS, VIIRS, and 0.1° HAI cells.
+              Inspect thermal hotspots across South Asia—including the Indo-Gangetic Plain, Central India, Chota Nagpur, and the Chittagong Hills—with distinct layer toggles for MODIS, VIIRS, 0.1° HAI cells, and NASA Events.
             </p>
           </div>
           <Link
@@ -217,9 +241,9 @@ export default async function HomePage() {
             <span>Open Geospatial Map</span>
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
           </Link>
-        </div>
+        </StaggerItem>
 
-        <div className="group flex flex-col justify-between rounded-2xl border border-[#E2DEC9] bg-[#FCFBF7] p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#10243A]/40 hover:shadow-md">
+        <StaggerItem hoverLift className="group flex flex-col justify-between rounded-2xl border border-[#E2DEC9] bg-[#FCFBF7] p-6 transition-shadow duration-200 hover:border-[#10243A]/40 hover:shadow-md">
           <div className="space-y-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#10243A] text-[#FF9F43]">
               <Eye className="h-5 w-5" />
@@ -238,9 +262,9 @@ export default async function HomePage() {
             <span>Launch Comparison Lab</span>
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
           </Link>
-        </div>
+        </StaggerItem>
 
-        <div className="group flex flex-col justify-between rounded-2xl border border-[#E2DEC9] bg-[#FCFBF7] p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#10243A]/40 hover:shadow-md">
+        <StaggerItem hoverLift className="group flex flex-col justify-between rounded-2xl border border-[#E2DEC9] bg-[#FCFBF7] p-6 transition-shadow duration-200 hover:border-[#10243A]/40 hover:shadow-md">
           <div className="space-y-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#10243A] text-[#FF6B2B]">
               <Activity className="h-5 w-5" />
@@ -259,11 +283,11 @@ export default async function HomePage() {
             <span>Inspect Anomalies</span>
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
           </Link>
-        </div>
-      </section>
+        </StaggerItem>
+      </StaggerContainer>
 
       {/* Educational Science Section */}
-      <section className="fd-enter fd-delay-3 space-y-4 border-t border-[#E2DEC9] pt-8">
+      <FadeIn delay={0.08} className="space-y-4 border-t border-[#E2DEC9] pt-8">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-[#FF6B2B]">
             Scientific Literacy
@@ -290,7 +314,7 @@ export default async function HomePage() {
             defaultExpanded={true}
           />
         </div>
-      </section>
+      </FadeIn>
     </div>
   );
 }

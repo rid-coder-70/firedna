@@ -3,12 +3,11 @@ FireDNA Data Cleaner & Standardizer
 Parses raw NASA FIRMS CSV output into normalized records with preserved metadata.
 """
 
+import csv
 import io
-import json
 import logging
 from typing import List, Dict, Any
 from datetime import datetime, date, time
-import pandas as pd
 
 logger = logging.getLogger("firedna.ingestion.data_cleaner")
 
@@ -27,6 +26,15 @@ SATELLITE_NAME_MAP = {
 }
 
 
+def _parse_float(value: Any) -> Any:
+    if value is None:
+        return None
+    s = str(value).strip()
+    if not s or s.lower() == "nan":
+        return None
+    return float(s)
+
+
 class DataCleaner:
     """Parses and standardizes NASA FIRMS CSV records."""
 
@@ -34,41 +42,44 @@ class DataCleaner:
     def parse_csv(csv_text: str, product: str) -> List[Dict[str, Any]]:
         """
         Parses raw FIRMS CSV text into a list of standardized observation dicts.
+        Uses csv.DictReader for fast parsing across 45k+ South Asia observations.
         """
         if not csv_text or not csv_text.strip():
             logger.info("Empty CSV text received for product=%s", product)
             return []
 
-        # Read CSV with pandas, treating all columns initially as string to avoid parse crashes
         try:
-            df = pd.read_csv(io.StringIO(csv_text), dtype=str)
+            reader = csv.DictReader(io.StringIO(csv_text))
+            if not reader.fieldnames:
+                return []
+            fieldnames = [c.strip().lower() for c in reader.fieldnames]
         except Exception as exc:
-            logger.error("Failed to parse CSV with pandas: %s", str(exc))
+            logger.error("Failed to parse CSV header: %s", str(exc))
             return []
-
-        if df.empty:
-            return []
-
-        # Strip whitespace from column names
-        df.columns = [c.strip().lower() for c in df.columns]
-
-        # Filter out non-fire detections for VIIRS if 'type' column is present
-        # FIRMS VIIRS type: 0 = presumed vegetation fire, 1 = active volcano, 2 = other static land source, 3 = offshore
-        if "type" in df.columns:
-            df = df[df["type"] == "0"]
 
         records: List[Dict[str, Any]] = []
-        is_modis = "MODIS" in product.upper()
+        prod_upper = product.upper()
+        is_modis = "MODIS" in prod_upper
         instrument = "MODIS" if is_modis else "VIIRS"
+        has_type_col = "type" in fieldnames
 
-        for _, row in df.iterrows():
+        for raw_row in reader:
             try:
-                # Raw metadata backup
-                raw_meta = row.to_dict()
+                row = {
+                    k.strip().lower(): (v.strip() if isinstance(v, str) else v)
+                    for k, v in raw_row.items()
+                    if k is not None
+                }
 
-                # Coordinates
-                lat = float(row.get("latitude", 0.0))
-                lon = float(row.get("longitude", 0.0))
+                # Filter out non-fire detections for VIIRS if 'type' column is present
+                # 0 = presumed vegetation fire, 1 = active volcano, 2 = static land, 3 = offshore
+                if has_type_col and str(row.get("type", "")).strip() not in ("", "0"):
+                    continue
+
+                lat = _parse_float(row.get("latitude"))
+                lon = _parse_float(row.get("longitude"))
+                if lat is None or lon is None:
+                    continue
 
                 # Acquisition Date
                 date_str = str(row.get("acq_date", "")).strip()
@@ -85,39 +96,34 @@ class DataCleaner:
 
                 # Platform mapping
                 raw_sat = str(row.get("satellite", "")).strip()
-                platform = SATELLITE_NAME_MAP.get(raw_sat, raw_sat or ("Terra" if is_modis else "Suomi-NPP"))
+                if "NOAA21" in prod_upper:
+                    platform = "NOAA-21"
+                elif "NOAA20" in prod_upper:
+                    platform = "NOAA-20"
+                elif "SNPP" in prod_upper:
+                    platform = "Suomi-NPP"
+                else:
+                    platform = SATELLITE_NAME_MAP.get(raw_sat, raw_sat or ("Terra" if is_modis else "Suomi-NPP"))
 
-                # Brightness / Temperatures
-                # MODIS uses 'brightness', VIIRS uses 'bright_ti4'
-                brightness = None
-                for b_col in ["brightness", "bright_ti4"]:
-                    if b_col in row and pd.notna(row[b_col]) and row[b_col] != "":
-                        brightness = float(row[b_col])
-                        break
+                # Brightness / Temperatures (MODIS uses 'brightness', VIIRS uses 'bright_ti4')
+                brightness = _parse_float(row.get("brightness"))
+                if brightness is None:
+                    brightness = _parse_float(row.get("bright_ti4"))
 
-                bright_t31 = None
-                for t_col in ["bright_t31", "bright_ti5"]:
-                    if t_col in row and pd.notna(row[t_col]) and row[t_col] != "":
-                        bright_t31 = float(row[t_col])
-                        break
+                bright_t31 = _parse_float(row.get("bright_t31"))
+                if bright_t31 is None:
+                    bright_t31 = _parse_float(row.get("bright_ti5"))
 
-                # Fire Radiative Power (MW)
-                frp = None
-                if "frp" in row and pd.notna(row["frp"]) and row["frp"] != "":
-                    frp = float(row["frp"])
-
-                # Confidence (raw string)
+                frp = _parse_float(row.get("frp"))
                 conf_raw = str(row.get("confidence", "")).strip().lower()
 
-                # Day / Night
                 daynight = str(row.get("daynight", "")).strip().upper()
                 if daynight not in ("D", "N"):
                     daynight = "D"
 
-                # Spatial scan/track
-                scan = float(row["scan"]) if "scan" in row and pd.notna(row["scan"]) else None
-                track = float(row["track"]) if "track" in row and pd.notna(row["track"]) else None
-                version = str(row.get("version", "NRT")).strip()
+                scan = _parse_float(row.get("scan"))
+                track = _parse_float(row.get("track"))
+                version = str(row.get("version") or "NRT").strip()
 
                 record = {
                     "instrument": instrument,
@@ -136,7 +142,7 @@ class DataCleaner:
                     "scan": scan,
                     "track": track,
                     "version": version,
-                    "raw_metadata": raw_meta
+                    "raw_metadata": row
                 }
                 records.append(record)
 

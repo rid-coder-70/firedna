@@ -245,3 +245,39 @@ class ActivityAnomaly(Base):
 
     harmonized_observation = relationship("HarmonizedObservation", back_populates="anomalies")
 
+
+class NasaEvent(Base):
+    """
+    Curated natural-event records from NASA EONET v3 (category: wildfires).
+    Independent event-level context for FIRMS hotspots — never merged into
+    satellite_observations and never used to alter detection counts.
+    """
+    __tablename__ = "nasa_events"
+
+    id = Column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True)
+    eonet_id = Column(String(50), nullable=False, unique=True, index=True)
+    title = Column(String(300), nullable=False)
+    category = Column(String(50), nullable=False, default="wildfires", index=True)
+    status = Column(String(10), nullable=False, default="open", index=True)  # 'open' | 'closed'
+    closed_at = Column(DateTime, nullable=True)
+
+    latitude = Column(Float, nullable=False, index=True)
+    longitude = Column(Float, nullable=False, index=True)
+    first_observed = Column(DateTime, nullable=True, index=True)
+    last_observed = Column(DateTime, nullable=True, index=True)
+
+    magnitude_value = Column(Float, nullable=True)       # e.g. burned area (acres) when provided
+    magnitude_unit = Column(String(30), nullable=True)
+    source_ids = Column(String(200), nullable=True)      # e.g. 'InciWeb,IRWIN'
+    source_url = Column(Text, nullable=True)
+    eonet_link = Column(Text, nullable=True)
+    geometry_count = Column(Integer, nullable=False, default=1)
+
+    raw_metadata = Column(JSON, nullable=True)
+    data_source = Column(String(50), nullable=False, default="NASA EONET v3")
+    fetched_at = Column(DateTime, nullable=False, default=utc_now)
+
+    __table_args__ = (
+        Index("idx_nasa_events_lat_lon", "latitude", "longitude"),
+    )
+

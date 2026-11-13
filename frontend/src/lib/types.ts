@@ -135,7 +135,7 @@ export interface DailyAnalytics {
   total_count: number;
   total_frp_modis: number;
   total_frp_viirs: number;
-  hai_mean?: number;
+  hai_mean?: number | null;
 }
 
 export interface MonthlyAnalytics {
@@ -144,7 +144,7 @@ export interface MonthlyAnalytics {
   modis_count: number;
   viirs_count: number;
   total_count: number;
-  mean_frp?: number;
+  mean_frp?: number | null;
 }
 
 export interface SeasonalAnalytics {
@@ -180,4 +180,42 @@ export interface AnomalySummary {
   top_anomalies: Anomaly[];
   is_demo_data: boolean;
 }
+
+export interface NasaEvent {
+  id: number;
+  eonet_id: string;
+  title: string;
+  category: string;
+  status: "open" | "closed";
+  closed_at?: string;
+  latitude: number;
+  longitude: number;
+  first_observed?: string;
+  last_observed?: string;
+  magnitude_value?: number;
+  magnitude_unit?: string;
+  source_ids?: string;
+  source_url?: string;
+  eonet_link?: string;
+  geometry_count: number;
+  data_source: string;
+}
+
+export interface NasaOpenDataPlatform {
+  name: string;
+  url: string;
+  description: string;
+  api_key_required: boolean;
+  free_registration_url?: string;
+  category: string;
+  role_in_firedna: string;
+}
+
+export interface DataAvailabilityItem {
+  data_id: string;
+  min_date: string;
+  max_date: string;
+  is_demo?: boolean;
+}
+
 

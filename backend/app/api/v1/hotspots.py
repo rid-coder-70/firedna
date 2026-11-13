@@ -130,15 +130,15 @@ def get_hotspot_summary(
     modis_count = query.filter(SatelliteObservation.instrument == "MODIS").count()
     viirs_count = query.filter(SatelliteObservation.instrument == "VIIRS").count()
 
-    frp_stats = db.query(
+    frp_stats = query.with_entities(
         func.avg(SatelliteObservation.frp),
         func.max(SatelliteObservation.frp)
-    ).filter(SatelliteObservation.id.in_(query.with_entities(SatelliteObservation.id))).first()
+    ).first()
 
-    date_stats = db.query(
+    date_stats = query.with_entities(
         func.min(SatelliteObservation.acq_date),
         func.max(SatelliteObservation.acq_date)
-    ).filter(SatelliteObservation.id.in_(query.with_entities(SatelliteObservation.id))).first()
+    ).first()
 
     demo_exists = query.filter(SatelliteObservation.is_demo_data == True).first() is not None
 
@@ -168,13 +168,13 @@ def get_hotspots_geojson(
     end_date: Optional[date] = None,
     sensor: Optional[str] = None,
     confidence: Optional[str] = None,
-    max_features: int = Query(default=2000, le=5000),
+    max_features: int = Query(default=2500, le=5000),
     db: Session = Depends(get_db)
 ):
     """Returns observations formatted as a GeoJSON FeatureCollection for Leaflet."""
     query = db.query(SatelliteObservation)
 
-    mf = max_features if isinstance(max_features, int) else 2000
+    mf = max_features if isinstance(max_features, int) else 2500
 
     if bbox and isinstance(bbox, str):
         try:
@@ -200,7 +200,24 @@ def get_hotspots_geojson(
         query = query.filter(SatelliteObservation.confidence_category == confidence.lower())
 
     total_matching = query.count()
-    items = query.order_by(desc(SatelliteObservation.acq_date)).limit(mf).all()
+    if sensor and isinstance(sensor, str):
+        items = query.order_by(desc(SatelliteObservation.acq_date), desc(SatelliteObservation.frp)).limit(mf).all()
+    else:
+        modis_cap = min(800, mf // 3 if mf >= 3 else mf)
+        modis_items = (
+            query.filter(SatelliteObservation.instrument == "MODIS")
+            .order_by(desc(SatelliteObservation.acq_date), desc(SatelliteObservation.frp))
+            .limit(modis_cap)
+            .all()
+        )
+        viirs_cap = max(0, mf - len(modis_items))
+        viirs_items = (
+            query.filter(SatelliteObservation.instrument == "VIIRS")
+            .order_by(desc(SatelliteObservation.acq_date), desc(SatelliteObservation.frp))
+            .limit(viirs_cap)
+            .all()
+        )
+        items = modis_items + viirs_items
 
     features = []
     has_demo = False
