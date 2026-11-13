@@ -249,7 +249,9 @@ export default async function SourcesPage() {
                 <div>
                   <span className="text-[10px] uppercase font-bold block text-[#10243A]">Location</span>
                   <span>
-                    {evt.latitude ? `${evt.latitude.toFixed(3)}°N, ${evt.longitude?.toFixed(3)}°E` : "Regional"}
+                    {evt.latitude != null && evt.longitude != null
+                      ? `${evt.latitude.toFixed(3)}°N, ${evt.longitude.toFixed(3)}°E`
+                      : "Regional"}
                   </span>
                 </div>
                 <div>
@@ -266,7 +268,7 @@ export default async function SourcesPage() {
                 </div>
                 <div>
                   <span className="text-[10px] uppercase font-bold block text-[#10243A]">Data Provider</span>
-                  <span className="font-semibold text-[#10243A]">{evt.data_source}</span>
+                  <span className="font-semibold text-[#10243A]">{evt.data_source || "NASA EONET v3"}</span>
                 </div>
               </div>
 

@@ -26,6 +26,12 @@ export default async function AnomaliesPage() {
             Elevated (Z 1.5–2.5)
           </span>
         );
+      case "insufficient_data":
+        return (
+          <span className="bg-[#F7F6EF] text-[#4A607A] border border-[#E2DEC9] px-2.5 py-0.5 rounded-md text-[11px] font-medium">
+            Insufficient Data
+          </span>
+        );
       default:
         return (
           <span className="bg-[#10243A]/10 text-[#10243A] px-2.5 py-0.5 rounded-md text-[11px] font-medium">
@@ -133,25 +139,39 @@ export default async function AnomaliesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2DEC9]/60 text-[#10243A]">
-              {summary.top_anomalies.map((a) => (
-                <tr key={a.id} className="hover:bg-[#F7F6EF] transition-colors">
-                  <td className="py-3.5 px-3 font-semibold">{String(a.obs_date)}</td>
-                  <td className="py-3.5 px-3 font-mono text-[11px] text-[#4A607A]">
-                    {a.grid_cell_id}
+              {summary.top_anomalies.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-6 px-3 text-center text-[#4A607A]">
+                    No statistical anomalies recorded for the current window.
                   </td>
-                  <td className="py-3.5 px-3">
-                    {a.centroid_lat.toFixed(2)}°N, {a.centroid_lon.toFixed(2)}°E
-                  </td>
-                  <td className="py-3.5 px-3 font-bold">{a.observed_count} hotspots</td>
-                  <td className="py-3.5 px-3 text-[#4A607A]">
-                    {a.baseline_mean_count?.toFixed(1)} ± {a.baseline_std_count?.toFixed(1)}
-                  </td>
-                  <td className="py-3.5 px-3 font-extrabold text-[#FF6B2B]">
-                    +{a.z_score?.toFixed(2)}σ
-                  </td>
-                  <td className="py-3.5 px-3">{getLevelBadge(a.anomaly_level)}</td>
                 </tr>
-              ))}
+              ) : (
+                summary.top_anomalies.map((a) => (
+                  <tr key={a.id} className="hover:bg-[#F7F6EF] transition-colors">
+                    <td className="py-3.5 px-3 font-semibold">{String(a.obs_date)}</td>
+                    <td className="py-3.5 px-3 font-mono text-[11px] text-[#4A607A]">
+                      {a.grid_cell_id}
+                    </td>
+                    <td className="py-3.5 px-3">
+                      {Number(a.centroid_lat ?? 0).toFixed(2)}°N, {Number(a.centroid_lon ?? 0).toFixed(2)}°E
+                    </td>
+                    <td className="py-3.5 px-3 font-bold">
+                      {(a.observed_count ?? 0).toLocaleString()} hotspots
+                    </td>
+                    <td className="py-3.5 px-3 text-[#4A607A]">
+                      {a.baseline_mean_count != null && a.baseline_std_count != null
+                        ? `${a.baseline_mean_count.toFixed(1)} ± ${a.baseline_std_count.toFixed(1)}`
+                        : "Insufficient baseline"}
+                    </td>
+                    <td className="py-3.5 px-3 font-extrabold text-[#FF6B2B]">
+                      {a.z_score != null
+                        ? `${a.z_score >= 0 ? "+" : ""}${a.z_score.toFixed(2)}σ`
+                        : "N/A"}
+                    </td>
+                    <td className="py-3.5 px-3">{getLevelBadge(a.anomaly_level)}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

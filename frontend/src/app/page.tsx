@@ -7,12 +7,12 @@ import StatCard from "@/components/ui/StatCard";
 import EducationCard from "@/components/education/EducationCard";
 import FirmsSyncButton from "@/components/ui/FirmsSyncButton";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/MotionWrapper";
-import { getHotspotSummary, getHarmonizedResults, getNasaEvents, EXPORT_CSV_URL } from "@/lib/api";
+import { getHotspotSummary, getHarmonizedTotalCount, getNasaEvents, EXPORT_CSV_URL } from "@/lib/api";
 
 export default async function HomePage() {
-  const [summary, harmonizedCells, eonetEvents] = await Promise.all([
+  const [summary, harmonizedTotalCount, eonetEvents] = await Promise.all([
     getHotspotSummary(),
-    getHarmonizedResults(),
+    getHarmonizedTotalCount(),
     getNasaEvents()
   ]);
 
@@ -200,7 +200,7 @@ export default async function HomePage() {
           <StaggerItem hoverLift>
             <StatCard
               title="Harmonized Cells"
-              value={harmonizedCells.length}
+              value={harmonizedTotalCount.toLocaleString()}
               subtitle="0.1° (~11 km) unified grid"
               icon={ShieldCheck}
               variant="navy"
@@ -210,7 +210,7 @@ export default async function HomePage() {
           <StaggerItem hoverLift>
             <StatCard
               title="NASA EONET Events"
-              value={eonetEvents.length}
+              value={eonetEvents.length.toLocaleString()}
               subtitle="Curated wildfire events (v3)"
               icon={Globe2}
               variant="navy"

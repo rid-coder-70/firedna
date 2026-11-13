@@ -6,6 +6,8 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/MotionWra
 
 export default async function ComparePage() {
   const comparison = await getSensorComparison();
+  const haiScores = comparison.harmonized?.hai_scores ?? [];
+  const latestHai = haiScores.length > 0 ? (haiScores[haiScores.length - 1] ?? 0) : 0;
 
   return (
     <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
@@ -67,7 +69,7 @@ export default async function ComparePage() {
             <div className="flex justify-between items-baseline pt-1">
               <span>Total Detections</span>
               <strong className="text-2xl text-[#10243A] font-extrabold">
-                {comparison.modis.total_period_detections}
+                {(comparison.modis.total_period_detections ?? 0).toLocaleString()}
               </strong>
             </div>
           </div>
@@ -92,7 +94,7 @@ export default async function ComparePage() {
           <div className="space-y-2.5 text-xs text-[#4A607A]">
             <div className="flex justify-between py-1 border-b border-[#E2DEC9]/60">
               <span>Satellites</span>
-              <strong className="text-[#10243A]">{comparison.viirs.platforms.join(", ")}</strong>
+              <strong className="text-[#10243A]">{(comparison.viirs.platforms || []).join(", ")}</strong>
             </div>
             <div className="flex justify-between py-1 border-b border-[#E2DEC9]/60">
               <span>Spatial Resolution</span>
@@ -105,7 +107,7 @@ export default async function ComparePage() {
             <div className="flex justify-between items-baseline pt-1">
               <span>Total Detections</span>
               <strong className="text-2xl text-[#FF6B2B] font-extrabold">
-                {comparison.viirs.total_period_detections}
+                {(comparison.viirs.total_period_detections ?? 0).toLocaleString()}
               </strong>
             </div>
           </div>
@@ -143,7 +145,7 @@ export default async function ComparePage() {
             <div className="flex justify-between items-baseline pt-1">
               <span>Latest HAI Score</span>
               <strong className="text-2xl text-[#FF9F43] font-extrabold">
-                {comparison.harmonized.hai_scores[comparison.harmonized.hai_scores.length - 1].toFixed(2)}
+                {latestHai.toFixed(2)}
               </strong>
             </div>
           </div>

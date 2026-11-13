@@ -104,6 +104,14 @@ export default function FireMap({
     // 1. Render Harmonized 0.1° Grid Cells (Blue-to-Violet Spectrum)
     if (showGrid && gridLayerRef.current && harmonizedCells.length > 0) {
       harmonizedCells.forEach((cell) => {
+        if (
+          !Number.isFinite(cell.cell_lat_min) ||
+          !Number.isFinite(cell.cell_lon_min) ||
+          !Number.isFinite(cell.cell_lat_max) ||
+          !Number.isFinite(cell.cell_lon_max)
+        ) {
+          return;
+        }
         const bounds: L.LatLngBoundsExpression = [
           [cell.cell_lat_min, cell.cell_lon_min],
           [cell.cell_lat_max, cell.cell_lon_max],
@@ -147,9 +155,12 @@ export default function FireMap({
     }
 
     // 2. Render Point Hotspots (MODIS = Deep Plum #35063D, VIIRS = Blaze Orange)
-    if (hotspotsData && hotspotsData.features) {
-      hotspotsData.features.forEach((feature) => {
-        const [lon, lat] = feature.geometry.coordinates;
+    if (showModis || showViirs) {
+      hotspotsData?.features?.forEach((feature) => {
+        const coords = feature?.geometry?.coordinates;
+        if (!Array.isArray(coords) || coords.length < 2) return;
+        const [lon, lat] = coords;
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
         const p = feature.properties;
         const isModis = p.instrument === "MODIS";
 
@@ -181,8 +192,8 @@ export default function FireMap({
             </div>
             <div><strong>Coordinates:</strong> ${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E</div>
             <div><strong>Observed:</strong> ${p.acq_date} ${p.acq_time ? p.acq_time + " UTC" : ""}</div>
-            <div><strong>Radiative Power (FRP):</strong> <strong style="color: ${fillColor};">${p.frp ? p.frp + " MW" : "N/A"}</strong></div>
-            <div><strong>Brightness Temp:</strong> ${p.brightness ? p.brightness + " K" : "N/A"}</div>
+            <div><strong>Radiative Power (FRP):</strong> <strong style="color: ${fillColor};">${p.frp != null ? Number(p.frp).toFixed(1) + " MW" : "N/A"}</strong></div>
+            <div><strong>Brightness Temp:</strong> ${p.brightness != null ? Number(p.brightness).toFixed(1) + " K" : "N/A"}</div>
             <div style="margin-top: 6px; padding-top: 5px; border-top: 1px solid #E2DEC9; font-size: 11px; color: #4A607A;">
               Official NASA FIRMS satellite thermal anomaly.
             </div>
@@ -202,7 +213,7 @@ export default function FireMap({
     // 3. Render NASA Events (Emerald Green)
     if (showEonet && eonetLayerRef.current && nasaEvents && nasaEvents.length > 0) {
       nasaEvents.forEach((evt) => {
-        if (evt.latitude == null || evt.longitude == null) return;
+        if (!Number.isFinite(evt.latitude) || !Number.isFinite(evt.longitude)) return;
 
         const eonetMarker = L.circleMarker([evt.latitude, evt.longitude], {
           radius: 9.5,
@@ -269,7 +280,7 @@ export default function FireMap({
         <span className="text-[#E2DEC9]">|</span>
         <span>{totalPoints.toLocaleString()} Hotspots</span>
         <span className="text-[#E2DEC9] hidden sm:inline">|</span>
-        <span className="hidden sm:inline">{harmonizedCells.length} Cells</span>
+        <span className="hidden sm:inline">{harmonizedCells.length.toLocaleString()} Cells</span>
         {totalEonet > 0 && (
           <>
             <span className="text-[#E2DEC9] hidden sm:inline">|</span>

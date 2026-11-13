@@ -81,7 +81,8 @@ export default function CalendarHeatmap({
     return "bg-[#FF6B2B]";
   };
 
-  const selectedRecord = selectedDate ? dailyMap.get(selectedDate) : defaultDay;
+  const activeDate = selectedDate ?? (defaultDay ? String(defaultDay.date) : null);
+  const selectedRecord = activeDate ? dailyMap.get(activeDate) : undefined;
   const activeMonths = (monthlyData || []).filter((m) => m.total_count > 0);
 
   return (
@@ -127,7 +128,7 @@ export default function CalendarHeatmap({
       {viewMode === "window" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {dailyData.map((d) => {
-            const isSelected = String(d.date) === String(selectedRecord?.date);
+            const isSelected = activeDate === String(d.date);
             const totalFrp = Math.round(d.total_frp_modis + d.total_frp_viirs);
             const intensityPct = Math.min(100, Math.round((d.total_count / maxDailyCount) * 100));
 
@@ -176,22 +177,22 @@ export default function CalendarHeatmap({
 
       {/* Mode 2: Full 365-Day Annual Matrix (Zero synthetic data: uningested days = 0) */}
       {viewMode === "annual" && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-12 text-center text-xs font-bold text-[#4A607A] pb-1">
-            {monthNames.map((m) => (
-              <div key={m}>{m}</div>
-            ))}
-          </div>
+        <div className="overflow-x-auto pb-2">
+          <div className="min-w-[700px] space-y-2">
+            <div className="grid grid-cols-12 text-center text-xs font-bold text-[#4A607A] pb-1">
+              {monthNames.map((m) => (
+                <div key={m}>{m}</div>
+              ))}
+            </div>
 
-          <div className="overflow-x-auto pb-2">
-            <div className="inline-grid grid-rows-7 grid-flow-col gap-1.5 min-w-[700px]">
+            <div className="inline-grid grid-rows-7 grid-flow-col gap-1.5">
               {annualDays.map((d) => (
                 <button
                   key={d.date}
                   type="button"
                   onClick={() => setSelectedDate(d.date)}
                   className={`w-3.5 h-3.5 rounded-sm transition-transform hover:scale-125 focus:outline-none ${getColor(d.count, d.hasData)} ${
-                    selectedDate === d.date ? "ring-2 ring-[#FF6B2B] scale-125 z-10" : ""
+                    activeDate === d.date ? "ring-2 ring-[#FF6B2B] scale-125 z-10" : ""
                   }`}
                   title={
                     d.hasData
@@ -247,6 +248,23 @@ export default function CalendarHeatmap({
                   Mean HAI: {selectedRecord.hai_mean.toFixed(3)}
                 </span>
               </>
+            )}
+          </div>
+        ) : activeDate ? (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 bg-[#F7F6EF] border border-[#E2DEC9] px-4 py-2.5 rounded-xl text-[#10243A]">
+            <CalIcon className="w-4 h-4 text-[#4A607A] shrink-0" />
+            <span>
+              <strong>{activeDate}:</strong> 0 ingested detections{" "}
+              <span className="text-[#4A607A]">(Outside active NRT satellite window)</span>
+            </span>
+            {defaultDay && (
+              <button
+                type="button"
+                onClick={() => setSelectedDate(String(defaultDay.date))}
+                className="rounded-lg bg-[#10243A] px-2.5 py-1 text-[11px] font-semibold text-[#F7F6EF] hover:bg-[#1E3A5F] transition-colors"
+              >
+                Jump to Peak Day ({String(defaultDay.date)})
+              </button>
             )}
           </div>
         ) : (

@@ -49,9 +49,9 @@ export default function AnalyticsCharts({
                     return (
                       <div className="bg-[#FCFBF7] p-3.5 rounded-xl border border-[#E2DEC9] shadow-md text-xs space-y-1">
                         <p className="font-bold text-[#10243A] border-b border-[#E2DEC9] pb-1">{label}</p>
-                        <p className="text-[#E85D5D]">MODIS: <strong>{d.modis_count}</strong></p>
-                        <p className="text-[#FF6B2B]">VIIRS: <strong>{d.viirs_count}</strong></p>
-                        <p className="font-bold text-[#10243A]">Combined: {d.total_count}</p>
+                        <p className="text-[#E85D5D]">MODIS: <strong>{d.modis_count.toLocaleString()}</strong></p>
+                        <p className="text-[#FF6B2B]">VIIRS: <strong>{d.viirs_count.toLocaleString()}</strong></p>
+                        <p className="font-bold text-[#10243A]">Combined: {d.total_count.toLocaleString()}</p>
                       </div>
                     );
                   }
@@ -93,8 +93,8 @@ export default function AnalyticsCharts({
                       return (
                         <div className="bg-[#FCFBF7] p-3 rounded-xl border border-[#E2DEC9] shadow-md text-xs space-y-1">
                           <p className="font-bold text-[#10243A]">{label}</p>
-                          <p className="text-[#FF6B2B] font-semibold">Hotspots: {d.total_count}</p>
-                          <p className="text-[#4A607A]">Mean FRP: {d.mean_frp} MW</p>
+                          <p className="text-[#FF6B2B] font-semibold">Hotspots: {d.total_count.toLocaleString()}</p>
+                          <p className="text-[#4A607A]">Mean FRP: {d.mean_frp != null ? `${Number(d.mean_frp).toFixed(1)} MW` : "N/A"}</p>
                         </div>
                       );
                     }
@@ -131,8 +131,8 @@ export default function AnalyticsCharts({
                       return (
                         <div className="bg-[#FCFBF7] p-3 rounded-xl border border-[#E2DEC9] shadow-md text-xs space-y-1">
                           <p className="font-bold text-[#10243A]">{d.name} ({label})</p>
-                          <p className="text-[#10243A] font-semibold">Mean Daily: {d.mean_daily_count}</p>
-                          <p className="text-[#FF6B2B]">Total Seasonal: {d.total_count}</p>
+                          <p className="text-[#10243A] font-semibold">Mean Daily: {Number(d.mean_daily_count).toLocaleString()}</p>
+                          <p className="text-[#FF6B2B]">Total Seasonal: {d.total_count.toLocaleString()}</p>
                         </div>
                       );
                     }

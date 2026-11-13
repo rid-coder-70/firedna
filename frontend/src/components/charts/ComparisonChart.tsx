@@ -18,12 +18,11 @@ export default function ComparisonChart({
   viirsCounts,
   haiScores,
 }: ComparisonChartProps) {
-  const data = dates.map((d, i) => ({
+  const data = (dates || []).map((d, i) => ({
     date: d,
     MODIS: modisCounts[i] || 0,
     VIIRS: viirsCounts[i] || 0,
-    HAI: (haiScores[i] || 0) * 100,
-    rawHai: haiScores[i] || 0,
+    rawHai: haiScores[i] ?? 0,
   }));
 
   return (
@@ -38,7 +37,18 @@ export default function ComparisonChart({
             tickLine={false}
             tickFormatter={(v) => String(v).slice(5)}
           />
-          <YAxis stroke="#4A607A" fontSize={11} width={40} tickLine={false} axisLine={false} />
+          <YAxis yAxisId="left" stroke="#4A607A" fontSize={11} width={40} tickLine={false} axisLine={false} />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            domain={[0, 1]}
+            stroke="#10243A"
+            fontSize={11}
+            width={36}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(v) => Number(v).toFixed(1)}
+          />
           <Tooltip
             content={({ active, payload, label }) => {
               if (active && payload && payload.length) {
@@ -46,20 +56,21 @@ export default function ComparisonChart({
                 return (
                   <div className="bg-[#FCFBF7] p-3.5 rounded-xl border border-[#E2DEC9] shadow-md text-xs space-y-1">
                     <p className="font-extrabold text-[#10243A] border-b border-[#E2DEC9] pb-1 mb-1">{label}</p>
-                    <p className="text-[#E85D5D] font-medium">MODIS (~1 km): <strong>{item.MODIS}</strong></p>
-                    <p className="text-[#FF6B2B] font-medium">VIIRS (375 m): <strong>{item.VIIRS}</strong></p>
-                    <p className="text-[#10243A] font-bold">Harmonized HAI: {item.rawHai.toFixed(3)}</p>
+                    <p className="text-[#E85D5D] font-medium">MODIS (~1 km): <strong>{Number(item.MODIS).toLocaleString()}</strong></p>
+                    <p className="text-[#FF6B2B] font-medium">VIIRS (375 m): <strong>{Number(item.VIIRS).toLocaleString()}</strong></p>
+                    <p className="text-[#10243A] font-bold">Harmonized HAI: {Number(item.rawHai).toFixed(3)}</p>
                   </div>
                 );
               }
               return null;
             }}
           />
-          <Bar dataKey="MODIS" fill="#E85D5D" radius={[4, 4, 0, 0]} maxBarSize={28} />
-          <Bar dataKey="VIIRS" fill="#FF6B2B" radius={[4, 4, 0, 0]} maxBarSize={28} />
+          <Bar yAxisId="left" dataKey="MODIS" fill="#E85D5D" radius={[4, 4, 0, 0]} maxBarSize={28} />
+          <Bar yAxisId="left" dataKey="VIIRS" fill="#FF6B2B" radius={[4, 4, 0, 0]} maxBarSize={28} />
           <Line
+            yAxisId="right"
             type="monotone"
-            dataKey="HAI"
+            dataKey="rawHai"
             stroke="#10243A"
             strokeWidth={3}
             dot={{ r: 4, fill: "#10243A" }}
