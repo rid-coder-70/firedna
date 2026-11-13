@@ -27,12 +27,18 @@ export default function ComparisonChart({
   }));
 
   return (
-    <div className="w-full h-80 pt-2">
+    <div className="w-full h-64 sm:h-80 pt-2">
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
+        <ComposedChart data={data} margin={{ top: 10, right: 8, bottom: 10, left: -12 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#E2DEC9" vertical={false} />
-          <XAxis dataKey="date" stroke="#4A607A" fontSize={12} tickLine={false} />
-          <YAxis stroke="#4A607A" fontSize={12} tickLine={false} axisLine={false} />
+          <XAxis
+            dataKey="date"
+            stroke="#4A607A"
+            fontSize={11}
+            tickLine={false}
+            tickFormatter={(v) => String(v).slice(5)}
+          />
+          <YAxis stroke="#4A607A" fontSize={11} width={40} tickLine={false} axisLine={false} />
           <Tooltip
             content={({ active, payload, label }) => {
               if (active && payload && payload.length) {
