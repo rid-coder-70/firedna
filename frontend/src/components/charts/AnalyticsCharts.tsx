@@ -18,11 +18,11 @@ export default function AnalyticsCharts({
   seasonalData,
 }: AnalyticsChartsProps) {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Chart 1: Daily Time Series */}
-      <div className="bg-[#FCFBF7] p-6 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm space-y-4">
+      <div className="bg-[#FCFBF7] p-4 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm space-y-4">
         <div>
-          <h2 className="text-lg font-extrabold text-[#10243A]">
+          <h2 className="text-base sm:text-lg font-extrabold text-[#10243A]">
             Daily Hotspot Detection Trend
           </h2>
           <p className="text-xs text-[#4A607A]">
@@ -30,12 +30,18 @@ export default function AnalyticsCharts({
           </p>
         </div>
 
-        <div className="w-full h-72">
+        <div className="w-full h-64 sm:h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={dailyData} margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
+            <LineChart data={dailyData} margin={{ top: 10, right: 8, bottom: 10, left: -12 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2DEC9" vertical={false} />
-              <XAxis dataKey="date" stroke="#4A607A" fontSize={11} tickLine={false} />
-              <YAxis stroke="#4A607A" fontSize={11} tickLine={false} axisLine={false} />
+              <XAxis
+                dataKey="date"
+                stroke="#4A607A"
+                fontSize={11}
+                tickLine={false}
+                tickFormatter={(v) => String(v).slice(5)}
+              />
+              <YAxis stroke="#4A607A" fontSize={11} width={44} tickLine={false} axisLine={false} />
               <Tooltip
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
@@ -62,11 +68,11 @@ export default function AnalyticsCharts({
       </div>
 
       {/* Grid of Two Charts: Monthly Climatology & Seasonal Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
         {/* Monthly Climatology */}
-        <div className="bg-[#FCFBF7] p-6 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm space-y-4">
+        <div className="bg-[#FCFBF7] p-4 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm space-y-4">
           <div>
-            <h2 className="text-lg font-extrabold text-[#10243A]">
+            <h2 className="text-base sm:text-lg font-extrabold text-[#10243A]">
               Monthly Climatological Profile
             </h2>
             <p className="text-xs text-[#4A607A]">
@@ -74,12 +80,12 @@ export default function AnalyticsCharts({
             </p>
           </div>
 
-          <div className="w-full h-64">
+          <div className="w-full h-60 sm:h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData} margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
+              <BarChart data={monthlyData} margin={{ top: 10, right: 8, bottom: 10, left: -12 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2DEC9" vertical={false} />
-                <XAxis dataKey="month_name" stroke="#4A607A" fontSize={11} tickLine={false} />
-                <YAxis stroke="#4A607A" fontSize={11} tickLine={false} axisLine={false} />
+                <XAxis dataKey="month_name" stroke="#4A607A" fontSize={10} tickLine={false} />
+                <YAxis stroke="#4A607A" fontSize={10} width={44} tickLine={false} axisLine={false} />
                 <Tooltip
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
@@ -102,9 +108,9 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Seasonal Breakdown */}
-        <div className="bg-[#FCFBF7] p-6 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm space-y-4">
+        <div className="bg-[#FCFBF7] p-4 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm space-y-4">
           <div>
-            <h2 className="text-lg font-extrabold text-[#10243A]">
+            <h2 className="text-base sm:text-lg font-extrabold text-[#10243A]">
               Seasonal Burning Breakdown
             </h2>
             <p className="text-xs text-[#4A607A]">
@@ -112,12 +118,12 @@ export default function AnalyticsCharts({
             </p>
           </div>
 
-          <div className="w-full h-64">
+          <div className="w-full h-60 sm:h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={seasonalData} margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
+              <BarChart data={seasonalData} margin={{ top: 10, right: 8, bottom: 10, left: -12 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2DEC9" vertical={false} />
                 <XAxis dataKey="season" stroke="#4A607A" fontSize={11} tickLine={false} />
-                <YAxis stroke="#4A607A" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#4A607A" fontSize={11} width={44} tickLine={false} axisLine={false} />
                 <Tooltip
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {

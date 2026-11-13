@@ -32,17 +32,17 @@ export default function AboutPage() {
               how to fairly harmonize, compare, and understand active-fire telemetry across multiple NASA and NOAA satellites with different optical resolutions and overpass schedules.
             </p>
 
-            <div className="flex flex-wrap items-center gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-3 pt-2">
               <Link
                 href="/map"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#FF6B2B] px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#e55a1d]"
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#FF6B2B] px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#e55a1d]"
               >
                 <span>Open Interactive Fire Map</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 shrink-0" />
               </Link>
               <Link
                 href="/compare"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#10243A] px-5 py-3 text-xs sm:text-sm font-semibold text-[#F7F6EF] transition-colors hover:bg-[#1E3A5F]"
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#10243A] px-5 py-3 text-xs sm:text-sm font-semibold text-[#F7F6EF] transition-colors hover:bg-[#1E3A5F]"
               >
                 <span>Explore Sensor Lab</span>
               </Link>
@@ -92,7 +92,7 @@ export default function AboutPage() {
         <StaggerItem hoverLift className="bg-[#FCFBF7] p-5 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm space-y-4 relative overflow-hidden">
           <div className="absolute inset-x-0 top-0 h-1 bg-[#10243A]" />
           <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-xl bg-[#10243A] text-[#FF6B2B] flex items-center justify-center">
+            <div className="w-10 h-10 shrink-0 rounded-xl bg-[#10243A] text-[#FF6B2B] flex items-center justify-center">
               <Shield className="w-5 h-5" />
             </div>
             <span className="text-[11px] font-bold uppercase tracking-wider bg-[#EFECE1] text-[#10243A] px-2.5 py-1 rounded-md">
@@ -110,7 +110,7 @@ export default function AboutPage() {
         <StaggerItem hoverLift className="bg-[#FCFBF7] p-5 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm space-y-4 relative overflow-hidden">
           <div className="absolute inset-x-0 top-0 h-1 bg-[#FF6B2B]" />
           <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-xl bg-[#FFF2EB] text-[#FF6B2B] border border-[#FF6B2B]/25 flex items-center justify-center">
+            <div className="w-10 h-10 shrink-0 rounded-xl bg-[#FFF2EB] text-[#FF6B2B] border border-[#FF6B2B]/25 flex items-center justify-center">
               <Globe className="w-5 h-5" />
             </div>
             <span className="text-[11px] font-bold uppercase tracking-wider bg-[#FFF2EB] text-[#FF6B2B] px-2.5 py-1 rounded-md">

@@ -36,6 +36,13 @@ export default function FireMap({
   const [showEonet, setShowEonet] = useState(true);
   const [controlsExpanded, setControlsExpanded] = useState(true);
 
+  // Start layer drawer collapsed on narrow mobile phones to keep map canvas clear
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 640) {
+      setControlsExpanded(false);
+    }
+  }, []);
+
   // Initialize Map centered on South Asia with key-free OpenStreetMap tiles
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
@@ -254,23 +261,25 @@ export default function FireMap({
       />
 
       {/* Top-Left Status Badge */}
-      <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 flex items-center gap-1.5 sm:gap-2 rounded-xl border border-[#E2DEC9] bg-[#FCFBF7]/95 px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-[11px] sm:text-xs font-semibold text-[#10243A] shadow-sm backdrop-blur-md">
-        <span className="h-2 w-2 shrink-0 rounded-full bg-[#FF6B2B]" />
-        <span>South Asia</span>
+      <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 sm:gap-2 max-w-[calc(100%-10.5rem)] sm:max-w-none rounded-xl border border-[#E2DEC9] bg-[#FCFBF7]/95 px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-[10px] sm:text-xs font-semibold text-[#10243A] shadow-sm backdrop-blur-md">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 shrink-0 rounded-full bg-[#FF6B2B]" />
+          <span>South Asia</span>
+        </span>
         <span className="text-[#E2DEC9]">|</span>
         <span>{totalPoints.toLocaleString()} Hotspots</span>
-        <span className="text-[#E2DEC9]">|</span>
-        <span>{harmonizedCells.length} Cells</span>
+        <span className="text-[#E2DEC9] hidden sm:inline">|</span>
+        <span className="hidden sm:inline">{harmonizedCells.length} Cells</span>
         {totalEonet > 0 && (
           <>
-            <span className="text-[#E2DEC9]">|</span>
-            <span className="text-[#059669] font-bold">{totalEonet} NASA</span>
+            <span className="text-[#E2DEC9] hidden sm:inline">|</span>
+            <span className="text-[#059669] font-bold hidden sm:inline">{totalEonet} NASA</span>
           </>
         )}
       </div>
 
       {/* Top-Right Collapsible Layer Controls */}
-      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 w-48 sm:w-56 rounded-2xl border border-[#E2DEC9] bg-[#FCFBF7]/95 p-3 sm:p-4 text-xs text-[#10243A] shadow-md backdrop-blur-md">
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 w-40 sm:w-56 rounded-2xl border border-[#E2DEC9] bg-[#FCFBF7]/95 p-2.5 sm:p-4 text-[11px] sm:text-xs text-[#10243A] shadow-md backdrop-blur-md">
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"

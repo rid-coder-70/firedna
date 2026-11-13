@@ -101,7 +101,7 @@ export default async function HomePage() {
             <div className="space-y-2.5">
               <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E85D5D]/20 text-[#E85D5D]">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#E85D5D]/20 text-[#E85D5D]">
                     <Flame className="h-4 w-4" />
                   </span>
                   <div>
@@ -109,14 +109,14 @@ export default async function HomePage() {
                     <span className="block text-[11px] text-[#F7F6EF]/65">Terra &amp; Aqua (2000–Present)</span>
                   </div>
                 </div>
-                <span className="rounded-md bg-white/10 px-2.5 py-1 text-xs font-mono font-bold text-white">
+                <span className="rounded-md bg-white/10 px-2.5 py-1 text-xs font-mono font-bold text-white shrink-0">
                   ~1,000 m
                 </span>
               </div>
 
               <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FF6B2B]/20 text-[#FF6B2B]">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#FF6B2B]/20 text-[#FF6B2B]">
                     <Activity className="h-4 w-4" />
                   </span>
                   <div>
@@ -124,7 +124,7 @@ export default async function HomePage() {
                     <span className="block text-[11px] text-[#F7F6EF]/65">SNPP, NOAA-20 &amp; NOAA-21</span>
                   </div>
                 </div>
-                <span className="rounded-md bg-[#FF6B2B] px-2.5 py-1 text-xs font-mono font-bold text-white">
+                <span className="rounded-md bg-[#FF6B2B] px-2.5 py-1 text-xs font-mono font-bold text-white shrink-0">
                   375 m
                 </span>
               </div>
