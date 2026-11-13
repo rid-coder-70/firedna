@@ -38,11 +38,11 @@ class BoundingBoxInput(BaseModel):
 # Ingestion Schemas
 # -----------------------------------------------------------------------------
 class IngestionRunRequest(BaseModel):
-    products: List[str] = Field(default=["MODIS_NRT", "VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT"])
+    products: List[str] = Field(default=["MODIS_NRT", "VIIRS_SNPP_NRT"])
     bbox: Optional[BoundingBoxInput] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    region_name: str = "South Asia"
+    region_name: str = "Bangladesh"
     force_demo: bool = False
 
 
@@ -239,41 +239,4 @@ class AnomalySummary(BaseModel):
     level_counts: Dict[str, int]
     top_anomalies: List[AnomalyItem]
     is_demo_data: bool
-
-
-# -----------------------------------------------------------------------------
-# NASA Open Data & Natural Event (EONET) Schemas
-# -----------------------------------------------------------------------------
-class NasaEventItem(BaseModel):
-    id: int
-    eonet_id: str
-    title: str
-    category: str = "wildfires"
-    status: str
-    closed_at: Optional[datetime] = None
-    latitude: float
-    longitude: float
-    first_observed: Optional[datetime] = None
-    last_observed: Optional[datetime] = None
-    magnitude_value: Optional[float] = None
-    magnitude_unit: Optional[str] = None
-    source_ids: Optional[str] = None
-    source_url: Optional[str] = None
-    eonet_link: Optional[str] = None
-    geometry_count: int = 1
-    data_source: str = "NASA EONET v3"
-
-    class Config:
-        from_attributes = True
-
-
-class NasaOpenDataPlatform(BaseModel):
-    name: str
-    url: str
-    description: str
-    api_key_required: bool
-    free_registration_url: Optional[str] = None
-    category: str
-    role_in_firedna: str
-
 

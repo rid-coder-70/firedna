@@ -14,7 +14,7 @@ export default function FirmsSyncButton() {
     setSyncing(true);
     setStatusMsg(null);
     try {
-      const res = await triggerFirmsSync(["MODIS_NRT", "VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT"], false);
+      const res = await triggerFirmsSync(["MODIS_NRT", "VIIRS_SNPP_NRT", "VIIRS_NOAA20_NRT"], false);
       const msg = res?.data?.message || "NASA FIRMS observations synced & harmonized.";
       setStatusMsg(msg);
       router.refresh();

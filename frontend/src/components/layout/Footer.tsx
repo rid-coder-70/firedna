@@ -21,7 +21,7 @@ export default function Footer() {
               FireDNA bridges MODIS (~1 km) and VIIRS (375 m) active-fire observations through spatial and temporal harmonization.
             </p>
             <p className="text-xs text-[#F7F6EF]/50">
-              Primary demonstration region: <strong>South Asia (5°N–40°N, 54°E–102°E)</strong> • Built for global coordinates.
+              Primary demonstration region: <strong>Bangladesh &amp; South Asia</strong> • Built for global coordinates.
             </p>
           </div>
 

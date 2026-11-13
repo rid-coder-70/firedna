@@ -133,7 +133,7 @@ def run_full_suite():
             brightness=320.0,
             frp=15.5,
             confidence_category="nominal",
-            is_demo_data=False
+            is_demo_data=True
         )
         db.add(sample_obs)
         db.commit()

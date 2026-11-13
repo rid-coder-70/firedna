@@ -2,7 +2,6 @@ import { getDailyAnalytics, getMonthlyAnalytics, getSeasonalAnalytics, EXPORT_AN
 import { BarChart2, Download } from "lucide-react";
 import AnalyticsCharts from "@/components/charts/AnalyticsCharts";
 import EducationCard from "@/components/education/EducationCard";
-import { FadeIn } from "@/components/ui/MotionWrapper";
 
 export default async function AnalyticsPage() {
   const dailySeries = await getDailyAnalytics();
@@ -10,10 +9,9 @@ export default async function AnalyticsPage() {
   const seasonalDist = await getSeasonalAnalytics();
 
   return (
-    <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8">
       {/* Header */}
-      <FadeIn>
-      <div className="bg-[#FCFBF7] p-5 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-[#FCFBF7] p-6 sm:p-8 rounded-2xl border border-[#E2DEC9] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-[#10243A] text-[#FF6B2B] flex items-center justify-center">
             <BarChart2 className="w-5 h-5" />
@@ -37,16 +35,13 @@ export default async function AnalyticsPage() {
           <span>Download Analytics CSV</span>
         </a>
       </div>
-      </FadeIn>
 
       {/* Main Charts Component */}
-      <FadeIn delay={0.06}>
       <AnalyticsCharts
         dailyData={dailySeries}
         monthlyData={monthlyDist}
         seasonalData={seasonalDist}
       />
-      </FadeIn>
 
       {/* Educational Context Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
